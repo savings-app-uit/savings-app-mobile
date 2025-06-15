@@ -6,7 +6,6 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from "expo-router";
 import React, { useState } from 'react';
 import {
-    Alert,
     Image,
     ImageBackground,
     StyleSheet,
@@ -16,6 +15,7 @@ import {
     View,
 } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
+import Toast from "react-native-toast-message";
 
 const bgImage = require('@/assets/images/hi/bgsignin.png');
 const logo = require('@/assets/images/logo/logoonly.png');
@@ -37,43 +37,54 @@ export default function SignIn() {
 
     const handleGoToForgotPassword = () => {
         router.push('/(auth)/forgotpassword');
-    };    const handleLogin = async () => {
+    };  
+
+    const handleLogin = async () => {
         if (!email || !password) {
-            Alert.alert('Error', 'Please fill in all fields');
+            Toast.show({
+                type: 'error',  
+                text1: 'Login Error',
+                text2: 'Please enter both email and password.',
+            })
             return;
         }        setLoading(true);
         try {
-            console.log('Attempting login with:', { email, password: '***' });
+            // console.log('Attempting login with:', { email, password: '***' });
             const response = await signInAPI(email, password);
             console.log('Login response:', response);
             
-            // Check if response has token (success indicator)
             if (response.token) {
-                // Save access token
                 await AsyncStorage.setItem('accessToken', response.token);
-                
-                Alert.alert('Success', response.message || 'Login successful!');
-                // Navigate to main app - you can change this route as needed
+                Toast.show({
+                    type: 'success',
+                    text1: 'Success',
+                    text2: 'Login Successful',
+                });
                 router.replace('/(tabs)');
             } else {
-                Alert.alert('Error', 'Login failed');
+                Toast.show({
+                    type: 'error',
+                    text1: 'Login Error',
+                    text2: response.message || 'An error occurred during login.',
+                });
             }
         } catch (error: any) {
             console.error('Login error:', error);
             let errorMessage = 'Network error occurred';
             
             if (error.response) {
-                // The request was made and the server responded with a status code
                 errorMessage = error.response.data?.message || `Server error: ${error.response.status}`;
             } else if (error.request) {
-                // The request was made but no response was received
                 errorMessage = 'No response from server. Please check your connection.';
             } else {
-                // Something happened in setting up the request
                 errorMessage = error.message || 'Request setup error';
             }
             
-            Alert.alert('Error', errorMessage);
+            Toast.show({
+                type: 'error',
+                text1: 'Login Error',
+                text2: errorMessage,
+            });
         } finally {
             setLoading(false);
         }
@@ -89,7 +100,6 @@ export default function SignIn() {
         }
     };
 
-    // Test connection when component mounts
     React.useEffect(() => {
         testConnection();
     }, []);
