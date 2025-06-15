@@ -1,9 +1,10 @@
+import { signInAPI } from '@/utils/api';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import MaskedView from '@react-native-masked-view/masked-view';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from "expo-router";
-import { useState } from 'react';
-import React from 'react';
+import React, { useState } from 'react';
 import {
     Image,
     ImageBackground,
@@ -14,13 +15,17 @@ import {
     View,
 } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
-import { NavigationHelper } from '../../utils/navigation';
+import Toast from "react-native-toast-message";
 
 const bgImage = require('@/assets/images/hi/bgsignin.png');
 const logo = require('@/assets/images/logo/logoonly.png');
 
 export default function SignIn() {
     const router = useRouter();
+    const [showPassword, setShowPassword] = useState(false);
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [loading, setLoading] = useState(false);
 
     const toggleShowPassword = () => {
         setShowPassword(!showPassword);
@@ -31,7 +36,58 @@ export default function SignIn() {
     };
 
     const handleGoToForgotPassword = () => {
-        router.push("/(auth)/forgotpassword");
+        router.push('/(auth)/forgotpassword');
+    };  
+
+    const handleLogin = async () => {
+        if (!email || !password) {
+            Toast.show({
+                type: 'error',  
+                text1: 'Login Error',
+                text2: 'Please enter both email and password.',
+            })
+            return;
+        }        setLoading(true);
+        try {
+            // console.log('Attempting login with:', { email, password: '***' });
+            const response = await signInAPI(email, password);
+            console.log('Login response:', response);
+            
+            if (response.token) {
+                await AsyncStorage.setItem('accessToken', response.token);
+                Toast.show({
+                    type: 'success',
+                    text1: 'Success',
+                    text2: 'Login Successful',
+                });
+                router.replace('/(tabs)');
+            } else {
+                Toast.show({
+                    type: 'error',
+                    text1: 'Login Error',
+                    text2: response.message || 'An error occurred during login.',
+                });
+            }
+        } catch (error: any) {
+            console.error('Login error:', error);
+            let errorMessage = 'Network error occurred';
+            
+            if (error.response) {
+                errorMessage = error.response.data?.message || `Server error: ${error.response.status}`;
+            } else if (error.request) {
+                errorMessage = 'No response from server. Please check your connection.';
+            } else {
+                errorMessage = error.message || 'Request setup error';
+            }
+            
+            Toast.show({
+                type: 'error',
+                text1: 'Login Error',
+                text2: errorMessage,
+            });
+        } finally {
+            setLoading(false);
+        }
     };
 
     const handleGoToDashboard = () => {
@@ -43,10 +99,19 @@ export default function SignIn() {
     //     // For now, just navigate to home
     //     NavigationHelper.replaceWithHome();
     // };
+    const testConnection = async () => {
+        try {
+            console.log('Testing connection to:', process.env.EXPO_PUBLIC_API_URL);
+            const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/health`);
+            console.log('Connection test response:', response.status);
+        } catch (error) {
+            console.error('Connection test failed:', error);
+        }
+    };
 
-    const [showPassword, setShowPassword] = React.useState(false);
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
+    React.useEffect(() => {
+        testConnection();
+    }, []);
 
     return (
         <KeyboardAwareScrollView
@@ -133,7 +198,7 @@ export default function SignIn() {
                         </Text>
                     </TouchableOpacity>
 
-                    <TouchableOpacity onPress={handleGoToDashboard}>
+                    <TouchableOpacity onPress={handleGoToDashboard} disabled={loading}>
                         <LinearGradient 
                             start={{x: 0, y: 0}} 
                             end={{x: 1, y: 0}} 
@@ -141,7 +206,7 @@ export default function SignIn() {
                             style={[styles.linearGradient, {marginTop: 60, alignSelf: 'center', width: '80%', height: 50}]}>
 
                             <Text style={styles.buttonText}>
-                                Sign In
+                                {loading ? 'Signing In...' : 'Sign In'}
                             </Text>
                         </LinearGradient>
                     </TouchableOpacity>

@@ -42,7 +42,3 @@ export const NavigationHelper = {
   }
 };
 
-// Example usage:
-// NavigationHelper.goToSignIn();
-// NavigationHelper.goToHome();
-// NavigationHelper.replaceWithHome();

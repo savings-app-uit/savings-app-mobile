@@ -1,9 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import MaskedView from '@react-native-masked-view/masked-view';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter, useLocalSearchParams } from "expo-router";
-import { useState } from 'react';
-import React from 'react';
+import React, { useState } from 'react';
 import {
     StyleSheet,
     Text,
@@ -12,7 +11,6 @@ import {
     View,
 } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
-import { NavigationHelper } from '../../utils/navigation';
 
 
 export default function SignIn() {
@@ -20,7 +18,7 @@ export default function SignIn() {
     const { previousScreen } = useLocalSearchParams<{ previousScreen?: string }>();
 
     const handleGoToSignIn = () => {
-        router.push("/(auth)/signin");
+        router.push('/(auth)/signin');
     };
 
     const handleButton = () => {
