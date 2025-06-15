@@ -4,6 +4,7 @@ import MaskedView from '@react-native-masked-view/masked-view';
 import { useRouter } from "expo-router";
 import React, { useState } from 'react';
 import {
+    Alert,
     Image,
     ImageBackground,
     StyleSheet,
@@ -23,24 +24,31 @@ const logo = require('@/assets/images/logo/logoonly.png');
 export default function SignIn() {
     const router = useRouter();
     
-    const toggleShowPassword = () => {
-        setShowPassword(!showPassword);
+    const toggleShowPassword1 = () => {
+        setShowPassword1(!showPassword1);
+    };
+
+    const toggleShowPassword2 = () => {
+        setShowPassword2(!showPassword2);
     };
 
     const handleGoToSignIn = () => {
         router.push("/(auth)/signin");
     };
 
-    // const handleLogin = () => {
-    //     // Here you would normally validate credentials
-    //     // For now, just navigate to home
-    //     NavigationHelper.replaceWithHome();
-    // };
+    const handleSubmit = () => {
+            if (password !== confirmPassword) {
+                Alert.alert('Error', 'Passwords do not match!');
+            } else {
+                router.push('/(auth)/success?previousScreen=signup');
+            }
+        };
 
-    const [showPassword, setShowPassword] = React.useState(false);  
+    const [showPassword1, setShowPassword1] = React.useState(false);  
+    const [showPassword2, setShowPassword2] = React.useState(false); 
     const [username, setUsername] = useState('');
-    const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
     const [phone, setPhone] = useState('');
 
     return (
@@ -63,7 +71,7 @@ export default function SignIn() {
 
                     <TouchableOpacity onPress={handleGoToSignIn}>
                         <Ionicons
-                            style={{ marginLeft: 20, marginTop: 50 }}
+                            style={{ marginLeft: 20, marginTop: 60 }}
                             name={'arrow-back'}
                             size={30}
                             color="#999"/>
@@ -114,20 +122,6 @@ export default function SignIn() {
                         onChangeText={setUsername}/>
 
                     <Text style={[styles.textdecription, {marginTop: 10, marginLeft: 40}]}>
-                        Email
-                    </Text>
-
-                    <TextInput 
-                        style={[styles.input, {alignSelf: 'center', marginTop: 5}]}
-                        placeholder='Enter your email'
-                        placeholderTextColor='#999'
-                        keyboardType='email-address'
-                        autoCapitalize='none'
-                        autoCorrect={false}
-                        value={email}
-                        onChangeText={setEmail}/>
-
-                    <Text style={[styles.textdecription, {marginTop: 10, marginLeft: 40}]}>
                         Phone Number 
                     </Text>
 
@@ -150,23 +144,48 @@ export default function SignIn() {
                             style={styles.passwordInput} 
                             placeholder='Enter your password'
                             placeholderTextColor='#999'
-                            secureTextEntry={!showPassword}
+                            secureTextEntry={!showPassword1}
                             autoCapitalize='none'
                             autoCorrect={false}
                             value={password}
                             onChangeText={setPassword}/>  
 
                         <TouchableOpacity
-                            onPress={toggleShowPassword}
+                            onPress={toggleShowPassword1}
                             style={styles.toggleButton}>
                             <Ionicons
-                                name={showPassword ? 'eye' : 'eye-off'}
+                                name={showPassword1 ? 'eye' : 'eye-off'}
                                 size={20}
                                 color="#999"/>
                         </TouchableOpacity>
                     </View>
 
-                    <TouchableOpacity>
+                    <Text style={[styles.textdecription, {marginTop: 20, marginLeft: 40}]}>
+                        Confirm password
+                    </Text>
+                    
+                    <View style={[styles.passwordInputContainer, { alignSelf: 'center', marginTop: 5 }]}>
+                        <TextInput
+                            style={styles.passwordInput} 
+                            placeholder='Enter your password'
+                            placeholderTextColor='#999'
+                            secureTextEntry={!showPassword2}
+                            autoCapitalize='none'
+                            autoCorrect={false}
+                            value={confirmPassword}
+                            onChangeText={setConfirmPassword}/>  
+                                    
+                        <TouchableOpacity
+                            onPress={toggleShowPassword2}
+                            style={styles.toggleButton}>
+                            <Ionicons
+                                name={showPassword2 ? 'eye' : 'eye-off'}
+                                size={20}
+                                color="#999"/>
+                            </TouchableOpacity>
+                        </View>
+
+                    <TouchableOpacity onPress={handleSubmit}>
                         <LinearGradient 
                             start={{x: 0, y: 0}} 
                             end={{x: 1, y: 0}} 

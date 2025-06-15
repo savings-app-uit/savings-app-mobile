@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import MaskedView from '@react-native-masked-view/masked-view';
-import { useRouter, useLocalSearchParams } from "expo-router";
+import { useRouter } from "expo-router";
 import { useState } from 'react';
 import React from 'react';
 import {
@@ -17,26 +17,17 @@ import { NavigationHelper } from '../../utils/navigation';
 
 export default function SignIn() {
     const router = useRouter();
-    const { previousScreen } = useLocalSearchParams<{ previousScreen?: string }>();
 
     const handleGoToSignIn = () => {
-        router.push("/(auth)/signin");
+        router.push('/(auth)/signin');
     };
 
-    const handleButton = () => {
-        if (previousScreen === 'forgotpassword') {
-            router.push("/(auth)/resetpassword");
-        } else if (previousScreen === 'enteremail') {
-            router.push("/(auth)/signup");
-        }
+    const handleGoToOTP = () => {
+        router.push('/(auth)/OTP?previousScreen=enteremail');
     };
 
-    const [otp, setOTP] = useState("");
 
-    const user = {
-        email: "email@gmail.com",
-    };
-
+    const [email, setEmail] = useState('');
 
     return (
         <KeyboardAwareScrollView
@@ -45,7 +36,7 @@ export default function SignIn() {
             contentContainerStyle={{ flexGrow: 1 }}
             style={{ flex: 1 }}>
 
-            <View style={{ flexGrow: 1, alignContent: 'center', backgroundColor: '#fff'}}>
+            <View style={{ flexGrow: 1, backgroundColor: '#fff'}}>
 
                 <View style={{flexDirection: 'row', marginTop: 0}}>
                     <TouchableOpacity onPress={handleGoToSignIn}>
@@ -64,7 +55,6 @@ export default function SignIn() {
                                 </Text>
                             } 
                             style={{marginTop: 50, position: 'absolute'}}>
-
                             <LinearGradient 
                                 colors={['#DD5E89', '#EB8E90', '#F7BB97']} 
                                 start={{ x: 0, y: 0 }} 
@@ -76,60 +66,81 @@ export default function SignIn() {
                                 </Text>
                             </LinearGradient>
                         </MaskedView>
-                    </View>         
+                    </View>                     
                 </View>
+                    
+                <MaskedView 
+                    maskElement={
+                        <Ionicons
+                            style={{ marginLeft: 0, marginTop: 50 }}
+                            name={'paper-plane-outline'}
+                            size={200}
+                            color={'black'}/>
+                    } 
+                    style={{ alignSelf: 'center', marginTop: 50 }}>
+                    <LinearGradient 
+                        colors={['#DD5E89', '#EB8E90', '#F7BB97']} 
+                        start={{ x: 0, y: 0 }} 
+                        end={{ x: 1, y: 0 }}>
 
-                <Text style={[styles.textTitle, {marginTop: 50, marginLeft: 20}]}>
-                    Verification Code
-                </Text> 
+                        <Ionicons
+                            style={{ marginLeft: 0, marginTop: 50, opacity: 0 }}
+                            name={'paper-plane-outline'}
+                            size={200}
+                            color={'black'}/>
+                    </LinearGradient>
+                </MaskedView>
 
-                <Text style={[styles.textdecription, {marginTop: 10, marginLeft: 20}]}>
-                    We have sent a 4-digit code to
+                <MaskedView 
+                    maskElement={
+                        <Text style={styles.gradientText}>
+                            Want to join us?
+                        </Text>
+                    } 
+                    style={{ alignSelf: 'center', marginTop: 50 }}>
+                    <LinearGradient 
+                        colors={['#DD5E89', '#EB8E90', '#F7BB97']} 
+                        start={{ x: 0, y: 0 }} 
+                        end={{ x: 1, y: 0 }}>
+                        <Text style={[styles.gradientText, { opacity: 0 }]}>
+                            Want to join us?
+                        </Text>
+                    </LinearGradient>
+                </MaskedView>
+
+                <Text style={[styles.textdecription, {marginTop: 10, alignSelf: 'center',}]}>
+                    Enter your email and we will send you a verification code
                 </Text>
 
-                <Text style={[styles.textEmail, {marginTop: 5, marginLeft: 20}]}>
-                    {user.email}
-                </Text> 
+                <Text style={[styles.textdecription, {marginTop: 50, marginLeft: 40}]}>
+                    Email
+                </Text>
 
                 <TextInput 
-                    style={[styles.input, {alignSelf: 'center', marginTop: 20}]}
-                    placeholder='Enter OTP'
+                    style={[styles.input, {alignSelf: 'center', marginTop: 5}]}
+                    placeholder='Enter your email'
                     placeholderTextColor='#999'
+                    keyboardType='email-address'
                     autoCapitalize='none'
                     autoCorrect={false}
-                    keyboardType="number-pad"
-                    maxLength={6}
-                    value={otp}
-                    onChangeText={setOTP}/> 
+                    onChangeText={setEmail}/>
 
-                <View style={{flexDirection: 'row', marginTop: 10, marginLeft:20}}>
-                    <Text style={[styles.textdecription, {marginLeft: 0,}]}>
-                            Didn't receive it?
-                    </Text>
-
-                    <TouchableOpacity>
-                        <Text style={[styles.textlink, {marginLeft: 5,}]}>
-                            Resend
-                        </Text>
-                    </TouchableOpacity>
-                </View>
-
-                <TouchableOpacity onPress={handleButton}>
+                <TouchableOpacity onPress={handleGoToOTP}>
                     <LinearGradient 
                         start={{x: 0, y: 0}} 
                         end={{x: 1, y: 0}} 
                         colors={['#DD5E89', '#EB8E90', '#F7BB97']} 
-                        style={[styles.linearGradient, {marginTop: 20, alignSelf: 'center', width: '80%', height: 50}]}>
+                        style={[styles.linearGradient, {marginTop: 60, alignSelf: 'center', width: '80%', height: 50}]}>
 
                         <Text style={styles.buttonText}>
-                            Verify code
+                            Send code
                         </Text>
                     </LinearGradient>
                 </TouchableOpacity>
             </View>
         </KeyboardAwareScrollView>
     );
-};
+}
 
 const styles = StyleSheet.create({
     container: {
@@ -142,23 +153,17 @@ const styles = StyleSheet.create({
         alignSelf: 'center',
         marginTop: 0
     },
-    textTitle: {
-        fontFamily: 'Inter',
-        fontSize: 28,
-        fontWeight: 'bold',
-        color: '#323232',
-    },
     textdecription: {
         fontFamily: 'Inter',
         fontSize: 12,
         fontWeight: 'regular',
         color: '#6c7278',
     },
-    textEmail: {
+    textlink: {
         fontFamily: 'Inter',
         fontSize: 12,
         fontWeight: 'bold',
-        color: '#323232',
+        color: '#4d81e7',
     },
     input: {
         width: '80%',
@@ -178,6 +183,9 @@ const styles = StyleSheet.create({
         fontFamily: 'Inter',
         fontSize: 14,
         color: 'black'
+    },
+    toggleButton: {
+        padding: 10, 
     },
     linearGradient: {
         flex: 1,
@@ -202,11 +210,5 @@ const styles = StyleSheet.create({
         fontFamily: 'Inter',
         fontSize: 26,
         fontWeight: 'bold',
-    },
-    textlink: {
-        fontFamily: 'Inter',
-        fontSize: 12,
-        fontWeight: 'bold',
-        color: '#4d81e7',
-    },
+    }
 });

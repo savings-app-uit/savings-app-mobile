@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import MaskedView from '@react-native-masked-view/masked-view';
-import { useRouter, useLocalSearchParams } from "expo-router";
+import { useRouter } from "expo-router";
 import { useState } from 'react';
 import React from 'react';
 import {
@@ -10,6 +10,7 @@ import {
     TextInput,
     TouchableOpacity,
     View,
+    Alert,
 } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { NavigationHelper } from '../../utils/navigation';
@@ -17,26 +18,31 @@ import { NavigationHelper } from '../../utils/navigation';
 
 export default function SignIn() {
     const router = useRouter();
-    const { previousScreen } = useLocalSearchParams<{ previousScreen?: string }>();
 
-    const handleGoToSignIn = () => {
-        router.push("/(auth)/signin");
+    const toggleShowPassword1 = () => {
+        setShowPassword1(!showPassword1);
     };
 
-    const handleButton = () => {
-        if (previousScreen === 'forgotpassword') {
-            router.push("/(auth)/resetpassword");
-        } else if (previousScreen === 'enteremail') {
-            router.push("/(auth)/signup");
+    const toggleShowPassword2 = () => {
+        setShowPassword2(!showPassword2);
+    };
+
+    const handleGoToSignIn = () => {
+        router.push('/(auth)/signin');
+    };
+
+    const handleSubmit = () => {
+        if (password !== confirmPassword) {
+            Alert.alert('Error', 'Passwords do not match!');
+        } else {
+            router.push('/(auth)/success?previousScreen=resetpassword');
         }
     };
 
-    const [otp, setOTP] = useState("");
-
-    const user = {
-        email: "email@gmail.com",
-    };
-
+    const [showPassword1, setShowPassword1] = React.useState(false);  
+    const [showPassword2, setShowPassword2] = React.useState(false);  
+    const [password, setPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
 
     return (
         <KeyboardAwareScrollView
@@ -79,50 +85,69 @@ export default function SignIn() {
                     </View>         
                 </View>
 
-                <Text style={[styles.textTitle, {marginTop: 50, marginLeft: 20}]}>
-                    Verification Code
+                <Text style={[styles.textTitle, {marginTop: 50, alignSelf: 'center'}]}>
+                    Enter Your New Password
                 </Text> 
 
-                <Text style={[styles.textdecription, {marginTop: 10, marginLeft: 20}]}>
-                    We have sent a 4-digit code to
+                <Text style={[styles.textdecription, {marginTop: 30, marginLeft: 40}]}>
+                    Password
                 </Text>
-
-                <Text style={[styles.textEmail, {marginTop: 5, marginLeft: 20}]}>
-                    {user.email}
-                </Text> 
-
-                <TextInput 
-                    style={[styles.input, {alignSelf: 'center', marginTop: 20}]}
-                    placeholder='Enter OTP'
-                    placeholderTextColor='#999'
-                    autoCapitalize='none'
-                    autoCorrect={false}
-                    keyboardType="number-pad"
-                    maxLength={6}
-                    value={otp}
-                    onChangeText={setOTP}/> 
-
-                <View style={{flexDirection: 'row', marginTop: 10, marginLeft:20}}>
-                    <Text style={[styles.textdecription, {marginLeft: 0,}]}>
-                            Didn't receive it?
-                    </Text>
-
-                    <TouchableOpacity>
-                        <Text style={[styles.textlink, {marginLeft: 5,}]}>
-                            Resend
-                        </Text>
+                
+                <View style={[styles.passwordInputContainer, { alignSelf: 'center', marginTop: 5 }]}>
+                    <TextInput
+                        style={styles.passwordInput} 
+                        placeholder='Enter your password'
+                        placeholderTextColor='#999'
+                        secureTextEntry={!showPassword1}
+                        autoCapitalize='none'
+                        autoCorrect={false}
+                        value={password}
+                        onChangeText={setPassword}/>  
+                
+                    <TouchableOpacity
+                        onPress={toggleShowPassword1}
+                        style={styles.toggleButton}>
+                        <Ionicons
+                            name={showPassword1 ? 'eye' : 'eye-off'}
+                            size={20}
+                            color="#999"/>
                     </TouchableOpacity>
                 </View>
 
-                <TouchableOpacity onPress={handleButton}>
+                <Text style={[styles.textdecription, {marginTop: 20, marginLeft: 40}]}>
+                    Confirm password
+                </Text>
+
+                <View style={[styles.passwordInputContainer, { alignSelf: 'center', marginTop: 5 }]}>
+                    <TextInput
+                        style={styles.passwordInput} 
+                        placeholder='Enter your password'
+                        placeholderTextColor='#999'
+                        secureTextEntry={!showPassword2}
+                        autoCapitalize='none'
+                        autoCorrect={false}
+                        value={confirmPassword}
+                        onChangeText={setConfirmPassword}/>  
+                
+                    <TouchableOpacity
+                        onPress={toggleShowPassword2}
+                        style={styles.toggleButton}>
+                        <Ionicons
+                            name={showPassword2 ? 'eye' : 'eye-off'}
+                            size={20}
+                            color="#999"/>
+                    </TouchableOpacity>
+                </View>
+
+                <TouchableOpacity onPress={handleSubmit}>
                     <LinearGradient 
                         start={{x: 0, y: 0}} 
                         end={{x: 1, y: 0}} 
                         colors={['#DD5E89', '#EB8E90', '#F7BB97']} 
-                        style={[styles.linearGradient, {marginTop: 20, alignSelf: 'center', width: '80%', height: 50}]}>
+                        style={[styles.linearGradient, {marginTop: 50, alignSelf: 'center', width: '80%', height: 50}]}>
 
                         <Text style={styles.buttonText}>
-                            Verify code
+                            Reset password
                         </Text>
                     </LinearGradient>
                 </TouchableOpacity>
@@ -178,6 +203,36 @@ const styles = StyleSheet.create({
         fontFamily: 'Inter',
         fontSize: 14,
         color: 'black'
+    },
+    passwordInputContainer: {
+        flexDirection: 'row', 
+        alignItems: 'center', 
+        width: '80%',
+        height: 45,
+        backgroundColor: '#fff',
+        borderColor: '#ccc',
+        borderWidth: 1,
+        borderRadius: 10,
+        shadowColor: '#000',
+        shadowOffset: {
+        width: 0,
+        height: 2
+        },
+        shadowOpacity: 0.1,
+        shadowRadius: 3.84,
+        elevation: 5,
+        
+    },
+    passwordInput: {
+        flex: 1, 
+        paddingHorizontal: 15,
+        fontFamily: 'Inter',
+        fontSize: 14,
+        color: 'black',
+        
+    },    
+    toggleButton: {
+        padding: 10, 
     },
     linearGradient: {
         flex: 1,

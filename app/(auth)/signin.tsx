@@ -26,13 +26,17 @@ export default function SignIn() {
         setShowPassword(!showPassword);
     };
 
-    const handleGoToSignUp = () => {
-        router.push("/(auth)/signup");
+    const handleGoToEnterEmail = () => {
+        router.push("/(auth)/enteremail");
     };
 
     const handleGoToForgotPassword = () => {
         router.push("/(auth)/forgotpassword");
     };
+
+    const handleGoToDashboard = () => {
+        router.push("/(tabs)/dashboard");
+    }
 
     // const handleLogin = () => {
     //     // Here you would normally validate credentials
@@ -129,7 +133,7 @@ export default function SignIn() {
                         </Text>
                     </TouchableOpacity>
 
-                    <TouchableOpacity>
+                    <TouchableOpacity onPress={handleGoToDashboard}>
                         <LinearGradient 
                             start={{x: 0, y: 0}} 
                             end={{x: 1, y: 0}} 
@@ -147,7 +151,7 @@ export default function SignIn() {
                             Don't have an account?
                         </Text>
 
-                        <TouchableOpacity onPress={handleGoToSignUp}>
+                        <TouchableOpacity onPress={handleGoToEnterEmail}>
                             <Text style={[styles.textlink, {marginLeft: 5,}]}>
                                 Sign Up
                             </Text>
