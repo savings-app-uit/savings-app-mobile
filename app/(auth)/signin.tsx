@@ -1,9 +1,12 @@
+import { signInAPI } from '@/utils/api';
 import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import MaskedView from '@react-native-masked-view/masked-view';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from "expo-router";
 import React, { useState } from 'react';
 import {
+    Alert,
     Image,
     ImageBackground,
     StyleSheet,
@@ -19,6 +22,10 @@ const logo = require('@/assets/images/logo/logoonly.png');
 
 export default function SignIn() {
     const router = useRouter();
+    const [showPassword, setShowPassword] = useState(false);
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [loading, setLoading] = useState(false);
 
     const toggleShowPassword = () => {
         setShowPassword(!showPassword);
@@ -30,17 +37,62 @@ export default function SignIn() {
 
     const handleGoToForgotPassword = () => {
         router.push('/(auth)/forgotpassword');
+    };    const handleLogin = async () => {
+        if (!email || !password) {
+            Alert.alert('Error', 'Please fill in all fields');
+            return;
+        }        setLoading(true);
+        try {
+            console.log('Attempting login with:', { email, password: '***' });
+            const response = await signInAPI(email, password);
+            console.log('Login response:', response);
+            
+            // Check if response has token (success indicator)
+            if (response.token) {
+                // Save access token
+                await AsyncStorage.setItem('accessToken', response.token);
+                
+                Alert.alert('Success', response.message || 'Login successful!');
+                // Navigate to main app - you can change this route as needed
+                router.replace('/(tabs)');
+            } else {
+                Alert.alert('Error', 'Login failed');
+            }
+        } catch (error: any) {
+            console.error('Login error:', error);
+            let errorMessage = 'Network error occurred';
+            
+            if (error.response) {
+                // The request was made and the server responded with a status code
+                errorMessage = error.response.data?.message || `Server error: ${error.response.status}`;
+            } else if (error.request) {
+                // The request was made but no response was received
+                errorMessage = 'No response from server. Please check your connection.';
+            } else {
+                // Something happened in setting up the request
+                errorMessage = error.message || 'Request setup error';
+            }
+            
+            Alert.alert('Error', errorMessage);
+        } finally {
+            setLoading(false);
+        }
     };
 
-    // const handleLogin = () => {
-    //     // Here you would normally validate credentials
-    //     // For now, just navigate to home
-    //     NavigationHelper.replaceWithHome();
-    // };
+    const testConnection = async () => {
+        try {
+            console.log('Testing connection to:', process.env.EXPO_PUBLIC_API_URL);
+            const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/health`);
+            console.log('Connection test response:', response.status);
+        } catch (error) {
+            console.error('Connection test failed:', error);
+        }
+    };
 
-    const [showPassword, setShowPassword] = React.useState(false);
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
+    // Test connection when component mounts
+    React.useEffect(() => {
+        testConnection();
+    }, []);
 
     return (
         <KeyboardAwareScrollView
@@ -127,7 +179,7 @@ export default function SignIn() {
                         </Text>
                     </TouchableOpacity>
 
-                    <TouchableOpacity>
+                    <TouchableOpacity onPress={handleLogin} disabled={loading}>
                         <LinearGradient 
                             start={{x: 0, y: 0}} 
                             end={{x: 1, y: 0}} 
@@ -135,7 +187,7 @@ export default function SignIn() {
                             style={[styles.linearGradient, {marginTop: 60, alignSelf: 'center', width: '80%', height: 50}]}>
 
                             <Text style={styles.buttonText}>
-                                Sign In
+                                {loading ? 'Signing In...' : 'Sign In'}
                             </Text>
                         </LinearGradient>
                     </TouchableOpacity>

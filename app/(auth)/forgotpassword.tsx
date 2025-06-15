@@ -17,11 +17,11 @@ export default function SignIn() {
     const router = useRouter();
 
     const handleGoToSignIn = () => {
-        router.push("/(auth)/signin");
+        router.push('/(auth)/signin');
     };
 
     const handleGoToOTP = () => {
-        router.push("/(auth)/OTP" as any);
+        router.push('/(auth)/OTP');
     };
 
 
