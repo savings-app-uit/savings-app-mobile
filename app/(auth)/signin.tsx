@@ -1,9 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import MaskedView from '@react-native-masked-view/masked-view';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from "expo-router";
-import { useState } from 'react';
-import React from 'react';
+import React, { useState } from 'react';
 import {
     Image,
     ImageBackground,
@@ -14,7 +13,6 @@ import {
     View,
 } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
-import { NavigationHelper } from '../../utils/navigation';
 
 const bgImage = require('@/assets/images/hi/bgsignin.png');
 const logo = require('@/assets/images/logo/logoonly.png');
@@ -27,11 +25,11 @@ export default function SignIn() {
     };
 
     const handleGoToSignUp = () => {
-        router.push("/(auth)/signup");
+        router.push('/(auth)/signup');
     };
 
     const handleGoToForgotPassword = () => {
-        router.push("/(auth)/forgotpassword");
+        router.push('/(auth)/forgotpassword');
     };
 
     // const handleLogin = () => {
