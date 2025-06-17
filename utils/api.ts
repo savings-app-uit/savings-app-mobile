@@ -24,14 +24,21 @@ export const forgotPasswordResetAPI = (email: string, code: string, newPassword:
   return axios.post<IBackendRes<ICodeResponse>>(url, { email, code, newPassword });
 };
 
-// 5. Signup (Send OTP)
-export const signUpAPI = (name: string, email: string, phone: string, password: string) => {
-  const url = `/signup`;
-  return axios.post<IBackendRes<ICodeResponse>>(url, { name, email, phone, password });
-};
+
+// 5. Signup - Send Code
+export const signUpSendCodeAPI = (email: string) => {  
+  const url = `/signup/send-code`;
+  return axios.post<IBackendRes<ICodeResponse>>(url, { email });
+}
 
 // 6. Signup - Verify Code
 export const signUpVerifyCodeAPI = (email: string, code: string) => {
   const url = `/signup/verify-code`;
-  return axios.post<ISigninResponse>(url, { email, code });
+  return axios.post<IBackendRes<ICodeResponse>>(url, { email, code });
+};
+
+// 7. Signup - Finalize
+export const signUpAPI = (username: string, phone: string, email: string, password: string, code: string) => {
+  const url = `/signup`;
+  return axios.post<ISignupResponse>(url, { username, phone, email, password, code });
 };

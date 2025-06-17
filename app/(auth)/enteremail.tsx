@@ -1,10 +1,10 @@
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import MaskedView from '@react-native-masked-view/masked-view';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from "expo-router";
-import { useState } from 'react';
-import React from 'react';
+import React, { useState } from 'react';
 import {
+    Alert,
     StyleSheet,
     Text,
     TextInput,
@@ -12,22 +12,44 @@ import {
     View,
 } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
-import { NavigationHelper } from '../../utils/navigation';
+import { signUpSendCodeAPI } from '../../utils/api';
 
 
 export default function SignIn() {
     const router = useRouter();
+    const [email, setEmail] = useState('');
+    const [loading, setLoading] = useState(false);
 
     const handleGoToSignIn = () => {
         router.push('/(auth)/signin');
     };
 
-    const handleGoToOTP = () => {
-        router.push('/(auth)/OTP?previousScreen=enteremail');
+    const handleSendCode = async () => {
+        if (!email.trim()) {
+            Alert.alert('Error', 'Please enter your email address');
+            return;
+        }
+
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            Alert.alert('Error', 'Please enter a valid email address');
+            return;
+        }
+
+        setLoading(true);
+        try {
+            const response = await signUpSendCodeAPI(email);
+            if (response.message) {
+                // Navigate to OTP screen with email parameter
+                router.push(`/(auth)/OTP?email=${encodeURIComponent(email)}&flow=signup`);
+            }
+        } catch (error: any) {
+            console.error('Send code error:', error);
+            Alert.alert('Error', error?.message || 'Failed to send verification code. Please try again.');
+        } finally {
+            setLoading(false);
+        }
     };
-
-
-    const [email, setEmail] = useState('');
 
     return (
         <KeyboardAwareScrollView
@@ -125,15 +147,15 @@ export default function SignIn() {
                     autoCorrect={false}
                     onChangeText={setEmail}/>
 
-                <TouchableOpacity onPress={handleGoToOTP}>
+                <TouchableOpacity onPress={handleSendCode} disabled={loading}>
                     <LinearGradient 
                         start={{x: 0, y: 0}} 
                         end={{x: 1, y: 0}} 
-                        colors={['#DD5E89', '#EB8E90', '#F7BB97']} 
+                        colors={loading ? ['#ccc', '#ccc', '#ccc'] : ['#DD5E89', '#EB8E90', '#F7BB97']} 
                         style={[styles.linearGradient, {marginTop: 60, alignSelf: 'center', width: '80%', height: 50}]}>
 
                         <Text style={styles.buttonText}>
-                            Send code
+                            {loading ? 'Sending...' : 'Send code'}
                         </Text>
                     </LinearGradient>
                 </TouchableOpacity>

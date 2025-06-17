@@ -1,9 +1,11 @@
 import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import MaskedView from '@react-native-masked-view/masked-view';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useRouter } from "expo-router";
-import React, { useState } from 'react';
+import { useLocalSearchParams, useRouter } from "expo-router";
+import React, { useEffect, useState } from 'react';
 import {
+    Alert,
     Image,
     ImageBackground,
     StyleSheet,
@@ -13,14 +15,33 @@ import {
     View,
 } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
+import { signUpAPI } from '../../utils/api';
 
 const bgImage = require('@/assets/images/hi/bgsignup.png');
 const logo = require('@/assets/images/logo/logoonly.png');
 
 
 
-export default function SignIn() {
+export default function SignUp() {
     const router = useRouter();
+    const { email, code } = useLocalSearchParams<{ 
+        email?: string;
+        code?: string;
+    }>();
+    
+    const [showPassword, setShowPassword] = React.useState(false);  
+    const [username, setUsername] = useState('');
+    const [emailState, setEmailState] = useState('');
+    const [password, setPassword] = useState('');
+    const [phone, setPhone] = useState('');
+    const [loading, setLoading] = useState(false);
+
+    useEffect(() => {
+        // Pre-fill email if passed from OTP screen
+        if (email) {
+            setEmailState(email);
+        }
+    }, [email]);
     
     const toggleShowPassword = () => {
         setShowPassword(!showPassword);
@@ -30,17 +51,70 @@ export default function SignIn() {
         router.push("/(auth)/signin");
     };
 
-    // const handleLogin = () => {
-    //     // Here you would normally validate credentials
-    //     // For now, just navigate to home
-    //     NavigationHelper.replaceWithHome();
-    // };
+    const handleSignUp = async () => {
+        if (!username.trim()) {
+            Alert.alert('Error', 'Please enter your username');
+            return;
+        }
+        
+        if (!emailState.trim()) {
+            Alert.alert('Error', 'Please enter your email');
+            return;
+        }
+        
+        if (!phone.trim()) {
+            Alert.alert('Error', 'Please enter your phone number');
+            return;
+        }
+        
+        if (!password.trim()) {
+            Alert.alert('Error', 'Please enter your password');
+            return;
+        }
 
-    const [showPassword, setShowPassword] = React.useState(false);  
-    const [username, setUsername] = useState('');
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
-    const [phone, setPhone] = useState('');
+        if (password.length < 6) {
+            Alert.alert('Error', 'Password must be at least 6 characters long');
+            return;
+        }
+
+        if (!code) {
+            Alert.alert('Error', 'Verification code is missing');
+            return;
+        }
+
+        setLoading(true);
+        try {
+            const response = await signUpAPI(username, phone, emailState, password, code);
+            if (response.message) {
+                // Store token if provided
+                if (response.token) {
+                    await AsyncStorage.setItem('accessToken', response.token);
+                }
+                
+                Alert.alert(
+                    'Success',
+                    response.message || 'Account created successfully!',
+                    [
+                        {
+                            text: 'OK',
+                            onPress: () => {
+                                if (response.token) {
+                                    router.replace('/(tabs)');
+                                } else {
+                                    router.push('/(auth)/signin');
+                                }
+                            }
+                        }
+                    ]
+                );
+            }
+        } catch (error: any) {
+            console.error('Signup error:', error);
+            Alert.alert('Error', error?.message || 'Failed to create account. Please try again.');
+        } finally {
+            setLoading(false);
+        }
+    };
 
     return (
         <KeyboardAwareScrollView
@@ -123,8 +197,10 @@ export default function SignIn() {
                         keyboardType='email-address'
                         autoCapitalize='none'
                         autoCorrect={false}
-                        value={email}
-                        onChangeText={setEmail}/>
+                        value={emailState}
+                        onChangeText={setEmailState}
+                        editable={!email} // Disable editing if email came from OTP screen
+                    />
 
                     <Text style={[styles.textdecription, {marginTop: 10, marginLeft: 40}]}>
                         Phone Number 
@@ -165,14 +241,14 @@ export default function SignIn() {
                         </TouchableOpacity>
                     </View>
 
-                    <TouchableOpacity>
+                    <TouchableOpacity onPress={handleSignUp} disabled={loading}>
                         <LinearGradient 
                             start={{x: 0, y: 0}} 
                             end={{x: 1, y: 0}} 
-                            colors={['#DD5E89', '#EB8E90', '#F7BB97']} 
+                            colors={loading ? ['#ccc', '#ccc', '#ccc'] : ['#DD5E89', '#EB8E90', '#F7BB97']} 
                             style={[styles.linearGradient, {marginTop: 60, alignSelf: 'center', width: '80%', height: 50}]}>
                             <Text style={styles.buttonText}>
-                                Sign Up
+                                {loading ? 'Creating Account...' : 'Sign Up'}
                             </Text>
                         </LinearGradient>
                     </TouchableOpacity>
