@@ -1,6 +1,5 @@
 import { forgotPasswordVerifyCodeAPI, signUpVerifyCodeAPI } from '@/utils/api';
 import { Ionicons } from '@expo/vector-icons';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import MaskedView from '@react-native-masked-view/masked-view';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -18,9 +17,10 @@ import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view
 
 export default function OTP() {
     const router = useRouter();
-    const { previousScreen, email } = useLocalSearchParams<{ 
+    const { previousScreen, email, flow } = useLocalSearchParams<{ 
         previousScreen?: string;
         email?: string;
+        flow?: string;
     }>();
     
     const [otp, setOTP] = useState("");
@@ -43,37 +43,29 @@ export default function OTP() {
 
         setLoading(true);
         try {
-            console.log('Verifying code:', { email, code: otp, previousScreen });
+            console.log('Verifying code:', { email, code: otp, flow, previousScreen });
             
             let response;
-            if (previousScreen === 'forgotpassword') {
+            
+            // Check flow parameter first, then previousScreen for backward compatibility
+            const currentFlow = flow || previousScreen;
+            
+            if (currentFlow === 'forgotpassword') {
                 response = await forgotPasswordVerifyCodeAPI(email, otp);
-                if (response.statusCode === 200 || response.statusCode === '200' || response.message) {
+                if (response.message || response.statusCode === 200 || response.statusCode === '200') {
                     router.push({
                         pathname: '/(auth)/resetpassword',
                         params: { email, code: otp }
                     });
-                    
-                    Alert.alert(
-                        'Success',
-                        response.message || 'Code verified successfully'
-                    );
-                } else {
-                    Alert.alert('Error', response.message || 'Invalid verification code');
                 }
-            } else if (previousScreen === 'signup') {
+            } else if (currentFlow === 'signup') {
                 response = await signUpVerifyCodeAPI(email, otp);
-                if (response.token) {
-                    await AsyncStorage.setItem('accessToken', response.token);
-                    
-                    router.replace('/(tabs)');
-                    
-                    Alert.alert(
-                        'Success',
-                        response.message || 'Account verified successfully!'
-                    );
-                } else {
-                    Alert.alert('Error', 'Verification failed');
+                if (response.message) {
+                    // Navigate to signup.tsx to complete registration
+                    router.push({
+                        pathname: '/(auth)/signup',
+                        params: { email, code: otp }
+                    });
                 }
             } else {
                 Alert.alert('Error', 'Invalid verification context');

@@ -8,7 +8,7 @@ declare global {
     }
 
     interface ISignupRequest {
-        name: string;
+        username: string;
         email: string;
         phone: string;
         password: string;
@@ -45,13 +45,21 @@ declare global {
     interface ICodeResponse {
         success: boolean;
         message: string;
-    }
+    }   
 
-    // Specific response interfaces for different endpoints
     interface ISigninResponse {
         message: string;
         token: string;
         user: {
+            id: string;
+            email: string;
+        };
+    }
+
+    interface ISignupResponse {
+        message: string;
+        token?: string;
+        user?: {
             id: string;
             email: string;
             name: string;
