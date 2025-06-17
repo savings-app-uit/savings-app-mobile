@@ -1,23 +1,31 @@
+import { forgotPasswordResetAPI } from '@/utils/api';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import MaskedView from '@react-native-masked-view/masked-view';
-import { useRouter } from "expo-router";
-import { useState } from 'react';
-import React from 'react';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useLocalSearchParams, useRouter } from "expo-router";
+import React, { useState } from 'react';
 import {
+    Alert,
     StyleSheet,
     Text,
     TextInput,
     TouchableOpacity,
     View,
-    Alert,
 } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
-import { NavigationHelper } from '../../utils/navigation';
 
-
-export default function SignIn() {
+export default function ResetPassword() {
     const router = useRouter();
+    const { email, code } = useLocalSearchParams<{ 
+        email?: string;
+        code?: string;
+    }>();
+    
+    const [showPassword1, setShowPassword1] = useState(false);
+    const [showPassword2, setShowPassword2] = useState(false);
+    const [newPassword, setNewPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
+    const [loading, setLoading] = useState(false);
 
     const toggleShowPassword1 = () => {
         setShowPassword1(!showPassword1);
@@ -31,18 +39,52 @@ export default function SignIn() {
         router.push('/(auth)/signin');
     };
 
-    const handleSubmit = () => {
-        if (password !== confirmPassword) {
-            Alert.alert('Error', 'Passwords do not match!');
-        } else {
-            router.push('/(auth)/success?previousScreen=resetpassword');
+    const validateInputs = () => {
+        if (!newPassword.trim()) {
+            Alert.alert('Error', 'Please enter your new password');
+            return false;
         }
+        if (newPassword.length < 6) {
+            Alert.alert('Error', 'Password must be at least 6 characters');
+            return false;
+        }
+        if (!confirmPassword.trim()) {
+            Alert.alert('Error', 'Please confirm your password');
+            return false;
+        }
+        if (newPassword !== confirmPassword) {
+            Alert.alert('Error', 'Passwords do not match');
+            return false;
+        }
+        return true;
     };
 
-    const [showPassword1, setShowPassword1] = React.useState(false);  
-    const [showPassword2, setShowPassword2] = React.useState(false);  
-    const [password, setPassword] = useState('');
-    const [confirmPassword, setConfirmPassword] = useState('');
+    const handleResetPassword = async () => {
+        if (!validateInputs()) {
+            return;
+        }
+
+        if (!email || !code) {
+            Alert.alert('Error', 'Missing verification information. Please start over.');
+            return;
+        }
+
+        setLoading(true);
+        try {
+            console.log('Resetting password for:', { email, code: '***', newPassword: '***' });
+            
+            const response = await forgotPasswordResetAPI(email, code, newPassword);
+            console.log('Reset password response:', response);
+            
+            // Success - navigate to success screen
+            router.push('/(auth)/success?previousScreen=resetpassword');
+        } catch (error: any) {
+            console.error('Reset password error:', error);
+            Alert.alert('Error', error.message || 'Failed to reset password');
+        } finally {
+            setLoading(false);
+        }
+    };
 
     return (
         <KeyboardAwareScrollView
@@ -101,8 +143,8 @@ export default function SignIn() {
                         secureTextEntry={!showPassword1}
                         autoCapitalize='none'
                         autoCorrect={false}
-                        value={password}
-                        onChangeText={setPassword}/>  
+                        value={newPassword}
+                        onChangeText={setNewPassword}/>  
                 
                     <TouchableOpacity
                         onPress={toggleShowPassword1}
@@ -139,15 +181,15 @@ export default function SignIn() {
                     </TouchableOpacity>
                 </View>
 
-                <TouchableOpacity onPress={handleSubmit}>
+                <TouchableOpacity onPress={handleResetPassword} disabled={loading}>
                     <LinearGradient 
                         start={{x: 0, y: 0}} 
                         end={{x: 1, y: 0}} 
-                        colors={['#DD5E89', '#EB8E90', '#F7BB97']} 
+                        colors={loading ? ['#ccc', '#ccc', '#ccc'] : ['#DD5E89', '#EB8E90', '#F7BB97']} 
                         style={[styles.linearGradient, {marginTop: 50, alignSelf: 'center', width: '80%', height: 50}]}>
 
                         <Text style={styles.buttonText}>
-                            Reset password
+                            {loading ? 'Resetting...' : 'Reset password'}
                         </Text>
                     </LinearGradient>
                 </TouchableOpacity>

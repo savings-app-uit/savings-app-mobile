@@ -13,9 +13,10 @@ instance.interceptors.request.use(
   async function (config) {    const noAuthEndpoints = [
       "/signin",
       "/signup", 
-      "/send-code",
-      "/verify-code",
-      "/reset-password"
+      "/forgot-password/send-code",
+      "/forgot-password/verify-code",
+      "/forgot-password/reset",
+      "/signup/verify-code"
     ];
     if (!noAuthEndpoints.some((endpoint) => config.url?.includes(endpoint))) {
       const access_token = await AsyncStorage.getItem("accessToken");

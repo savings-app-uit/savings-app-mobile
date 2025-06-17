@@ -1,26 +1,37 @@
 import axios from "@/utils/api.customize";
 
+// 1. Signin
 export const signInAPI = (email: string, password: string) => {
   const url = `/signin`;
   return axios.post<ISigninResponse>(url, { email, password });
 };
 
-export const signUpAPI = (name: string, email: string, phone: string, password: string) => {
-  const url = `/signup`;
-  return axios.post<IBackendRes<IAuthResponse>>(url, { name, email, phone, password });
-};
-
-export const sendCodeAPI = (email: string) => {
-  const url = `/send-code`;
+// 2. Forgot Password - Send Code
+export const forgotPasswordSendCodeAPI = (email: string) => {
+  const url = `/forgot-password/send-code`;
   return axios.post<IBackendRes<ICodeResponse>>(url, { email });
 };
 
-export const verifyCodeAPI = (email: string, code: string) => {
-  const url = `/verify-code`;
+// 3. Forgot Password - Verify Code
+export const forgotPasswordVerifyCodeAPI = (email: string, code: string) => {
+  const url = `/forgot-password/verify-code`;
   return axios.post<IBackendRes<ICodeResponse>>(url, { email, code });
 };
 
-export const resetPasswordAPI = (email: string, code: string, newPassword: string) => {
-  const url = `/reset-password`;
+// 4. Forgot Password - Reset
+export const forgotPasswordResetAPI = (email: string, code: string, newPassword: string) => {
+  const url = `/forgot-password/reset`;
   return axios.post<IBackendRes<ICodeResponse>>(url, { email, code, newPassword });
+};
+
+// 5. Signup (Send OTP)
+export const signUpAPI = (name: string, email: string, phone: string, password: string) => {
+  const url = `/signup`;
+  return axios.post<IBackendRes<ICodeResponse>>(url, { name, email, phone, password });
+};
+
+// 6. Signup - Verify Code
+export const signUpVerifyCodeAPI = (email: string, code: string) => {
+  const url = `/signup/verify-code`;
+  return axios.post<ISigninResponse>(url, { email, code });
 };
