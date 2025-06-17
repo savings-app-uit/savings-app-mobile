@@ -32,7 +32,7 @@ export default function SignIn() {
     };
 
     const handleGoToEnterEmail = () => {
-        router.push("/(auth)/enteremail");
+        router.push('/(auth)/enteremail');
     };
 
     const handleGoToForgotPassword = () => {
@@ -91,7 +91,7 @@ export default function SignIn() {
     };
 
     const handleGoToDashboard = () => {
-        router.push("/(tabs)/dashboard");
+        router.push('/(tabs)/dashboard');
     }
 
     // const handleLogin = () => {

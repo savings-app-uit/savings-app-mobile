@@ -1,9 +1,11 @@
+import { forgotPasswordSendCodeAPI } from '@/utils/api';
 import { Ionicons } from '@expo/vector-icons';
 import MaskedView from '@react-native-masked-view/masked-view';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from "expo-router";
 import React, { useState } from 'react';
 import {
+    Alert,
     StyleSheet,
     Text,
     TextInput,
@@ -12,20 +14,65 @@ import {
 } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 
-
-export default function SignIn() {
+export default function ForgotPassword() {
     const router = useRouter();
+    const [email, setEmail] = useState('');
+    const [loading, setLoading] = useState(false);
 
     const handleGoToSignIn = () => {
         router.push('/(auth)/signin');
     };
 
-    const handleGoToOTP = () => {
-        router.push("/(auth)/OTP?previousScreen=forgotpassword");
+    const handleSendCode = async () => {
+        if (!email.trim()) {
+            Alert.alert('Error', 'Please enter your email');
+            return;
+        }
+
+        if (!email.includes('@')) {
+            Alert.alert('Error', 'Please enter a valid email address');
+            return;
+        }
+
+        setLoading(true);
+        try {
+            console.log('Sending forgot password code to:', email);
+            const response = await forgotPasswordSendCodeAPI(email);
+            console.log('Send code response:', response);
+            
+            if (response.statusCode === 200 || response.statusCode === '200' || response.message) {
+                router.push({
+                    pathname: '/(auth)/OTP',
+                    params: { 
+                        email,
+                        previousScreen: 'forgotpassword'
+                    }
+                });
+                
+                Alert.alert(
+                    'Success', 
+                    response.message || 'Verification code sent to your email'
+                );
+            } else {
+                Alert.alert('Error', response.message || 'Failed to send code');
+            }
+        } catch (error: any) {
+            console.error('Send code error:', error);
+            let errorMessage = 'Network error occurred';
+            
+            if (error.response) {
+                errorMessage = error.response.data?.message || `Server error: ${error.response.status}`;
+            } else if (error.request) {
+                errorMessage = 'No response from server. Please check your connection.';
+            } else {
+                errorMessage = error.message || 'Request setup error';
+            }
+            
+            Alert.alert('Error', errorMessage);
+        } finally {
+            setLoading(false);
+        }
     };
-
-
-    const [email, setEmail] = useState('');
 
     return (
         <KeyboardAwareScrollView
@@ -123,7 +170,7 @@ export default function SignIn() {
                     autoCorrect={false}
                     onChangeText={setEmail}/>
 
-                <TouchableOpacity onPress={handleGoToOTP}>
+                <TouchableOpacity onPress={handleSendCode} disabled={loading}>
                     <LinearGradient 
                         start={{x: 0, y: 0}} 
                         end={{x: 1, y: 0}} 
@@ -131,7 +178,7 @@ export default function SignIn() {
                         style={[styles.linearGradient, {marginTop: 60, alignSelf: 'center', width: '80%', height: 50}]}>
 
                         <Text style={styles.buttonText}>
-                            Send code
+                            {loading ? 'Sending...' : 'Send code'}
                         </Text>
                     </LinearGradient>
                 </TouchableOpacity>

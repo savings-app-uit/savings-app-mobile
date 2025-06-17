@@ -1,9 +1,12 @@
+import { forgotPasswordVerifyCodeAPI, signUpVerifyCodeAPI } from '@/utils/api';
 import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import MaskedView from '@react-native-masked-view/masked-view';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useRouter, useLocalSearchParams } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useState } from 'react';
 import {
+    Alert,
     StyleSheet,
     Text,
     TextInput,
@@ -13,26 +16,77 @@ import {
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 
 
-export default function SignIn() {
+export default function OTP() {
     const router = useRouter();
-    const { previousScreen } = useLocalSearchParams<{ previousScreen?: string }>();
+    const { previousScreen, email } = useLocalSearchParams<{ 
+        previousScreen?: string;
+        email?: string;
+    }>();
+    
+    const [otp, setOTP] = useState("");
+    const [loading, setLoading] = useState(false);
 
     const handleGoToSignIn = () => {
         router.push('/(auth)/signin');
     };
 
-    const handleButton = () => {
-        if (previousScreen === 'forgotpassword') {
-            router.push("/(auth)/resetpassword");
-        } else if (previousScreen === 'enteremail') {
-            router.push("/(auth)/signup");
+    const handleVerifyCode = async () => {
+        if (!otp.trim()) {
+            Alert.alert('Error', 'Please enter the verification code');
+            return;
         }
-    };
 
-    const [otp, setOTP] = useState("");
+        if (!email) {
+            Alert.alert('Error', 'Email is required');
+            return;
+        }
 
-    const user = {
-        email: "email@gmail.com",
+        setLoading(true);
+        try {
+            console.log('Verifying code:', { email, code: otp, previousScreen });
+            
+            let response;
+            if (previousScreen === 'forgotpassword') {
+                response = await forgotPasswordVerifyCodeAPI(email, otp);
+                if (response.statusCode === 200 || response.statusCode === '200' || response.message) {
+                    router.push({
+                        pathname: '/(auth)/resetpassword',
+                        params: { email, code: otp }
+                    });
+                    
+                    Alert.alert(
+                        'Success',
+                        response.message || 'Code verified successfully'
+                    );
+                } else {
+                    Alert.alert('Error', response.message || 'Invalid verification code');
+                }
+            } else if (previousScreen === 'signup') {
+                response = await signUpVerifyCodeAPI(email, otp);
+                if (response.token) {
+                    await AsyncStorage.setItem('accessToken', response.token);
+                    
+                    router.replace('/(tabs)');
+                    
+                    Alert.alert(
+                        'Success',
+                        response.message || 'Account verified successfully!'
+                    );
+                } else {
+                    Alert.alert('Error', 'Verification failed');
+                }
+            } else {
+                Alert.alert('Error', 'Invalid verification context');
+                return;
+            }
+            
+            console.log('Verify code response:', response);
+        } catch (error: any) {
+            console.error('Verify code error:', error);
+            Alert.alert('Error', error.message || 'Verification failed');
+        } finally {
+            setLoading(false);
+        }
     };
 
 
@@ -86,7 +140,7 @@ export default function SignIn() {
                 </Text>
 
                 <Text style={[styles.textEmail, {marginTop: 5, marginLeft: 20}]}>
-                    {user.email}
+                    {email || 'your email'}
                 </Text> 
 
                 <TextInput 
@@ -112,7 +166,7 @@ export default function SignIn() {
                     </TouchableOpacity>
                 </View>
 
-                <TouchableOpacity onPress={handleButton}>
+                <TouchableOpacity onPress={handleVerifyCode} disabled={loading}>
                     <LinearGradient 
                         start={{x: 0, y: 0}} 
                         end={{x: 1, y: 0}} 
@@ -120,7 +174,7 @@ export default function SignIn() {
                         style={[styles.linearGradient, {marginTop: 20, alignSelf: 'center', width: '80%', height: 50}]}>
 
                         <Text style={styles.buttonText}>
-                            Verify code
+                            {loading ? 'Verifying...' : 'Verify code'}
                         </Text>
                     </LinearGradient>
                 </TouchableOpacity>
