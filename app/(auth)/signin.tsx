@@ -6,6 +6,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from "expo-router";
 import React, { useState } from 'react';
 import {
+    Alert,
     Image,
     ImageBackground,
     StyleSheet,
@@ -15,7 +16,6 @@ import {
     View,
 } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
-import Toast from "react-native-toast-message";
 
 const bgImage = require('@/assets/images/hi/bgsignin.png');
 const logo = require('@/assets/images/logo/logoonly.png');
@@ -37,54 +37,55 @@ export default function SignIn() {
 
     const handleGoToForgotPassword = () => {
         router.push('/(auth)/forgotpassword');
-    };  
-
-    const handleLogin = async () => {
+    };    const handleLogin = async () => {
         if (!email || !password) {
-            Toast.show({
-                type: 'error',  
-                text1: 'Login Error',
-                text2: 'Please enter both email and password.',
-            })
+            Alert.alert('Error', 'Please enter both email and password.');
             return;
-        }        setLoading(true);
+        }
+          setLoading(true);
         try {
-            // console.log('Attempting login with:', { email, password: '***' });
+            console.log('Attempting login with:', { email, password: '***' });
             const response = await signInAPI(email, password);
             console.log('Login response:', response);
             
-            if (response.token) {
+            if (response.token && response.message) {
                 await AsyncStorage.setItem('accessToken', response.token);
-                Toast.show({
-                    type: 'success',
-                    text1: 'Success',
-                    text2: 'Login Successful',
-                });
-                router.replace('/(tabs)');
+                if (response.user) {
+                    await AsyncStorage.setItem('userInfo', JSON.stringify(response.user));
+                }
+                
+                Alert.alert(
+                    'Success',
+                    response.message || 'Login successful',
+                    [
+                        {
+                            text: 'OK',
+                            onPress: () => {
+                                router.replace('/(tabs)');
+                            }
+                        }
+                    ]
+                );
             } else {
-                Toast.show({
-                    type: 'error',
-                    text1: 'Login Error',
-                    text2: response.message || 'An error occurred during login.',
-                });
+                Alert.alert('Login Failed', response.message || 'Invalid credentials. Please try again.');
             }
         } catch (error: any) {
             console.error('Login error:', error);
             let errorMessage = 'Network error occurred';
             
             if (error.response) {
-                errorMessage = error.response.data?.message || `Server error: ${error.response.status}`;
-            } else if (error.request) {
+                const serverMessage = error.response.data?.message;
+                if (serverMessage) {
+                    errorMessage = serverMessage;
+                } else {
+                    errorMessage = `Server error: ${error.response.status}`;
+                }            } else if (error.request) {
                 errorMessage = 'No response from server. Please check your connection.';
             } else {
                 errorMessage = error.message || 'Request setup error';
             }
             
-            Toast.show({
-                type: 'error',
-                text1: 'Login Error',
-                text2: errorMessage,
-            });
+            Alert.alert('Login Error', errorMessage);
         } finally {
             setLoading(false);
         }
@@ -196,13 +197,11 @@ export default function SignIn() {
                         <Text style={[styles.textlink, {marginTop: 10, alignSelf: 'flex-end', marginRight: 40}]}>
                             Forgot Password?
                         </Text>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity onPress={handleGoToDashboard} disabled={loading}>
+                    </TouchableOpacity>                    <TouchableOpacity onPress={handleLogin} disabled={loading}>
                         <LinearGradient 
                             start={{x: 0, y: 0}} 
                             end={{x: 1, y: 0}} 
-                            colors={['#DD5E89', '#EB8E90', '#F7BB97']} 
+                            colors={loading ? ['#ccc', '#ccc', '#ccc'] : ['#DD5E89', '#EB8E90', '#F7BB97']} 
                             style={[styles.linearGradient, {marginTop: 60, alignSelf: 'center', width: '80%', height: 50}]}>
 
                             <Text style={styles.buttonText}>

@@ -45,12 +45,10 @@ declare global {
     interface ICodeResponse {
         success: boolean;
         message: string;
-    }   
-
-    interface ISigninResponse {
+    }       interface ISigninResponse {
         message: string;
-        token: string;
-        user: {
+        token?: string; // Optional because error responses won't have token
+        user?: {
             id: string;
             email: string;
         };
