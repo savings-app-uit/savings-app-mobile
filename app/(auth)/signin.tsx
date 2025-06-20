@@ -35,7 +35,7 @@ export default function SignIn() {
     };
 
     const handleGoToDashboard = () => {
-        router.push("/(tabs)/dashboard");
+        router.push('/(tabs)');
     }
 
     // const handleLogin = () => {

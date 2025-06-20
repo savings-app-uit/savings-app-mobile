@@ -61,7 +61,7 @@ export default function SignIn() {
                                 end={{ x: 1, y: 0 }}
                                 style={{ paddingHorizontal: 10 }}>
 
-                                <Text style={[styles.gradientLogo, { opacity: 0 }]}>
+                                <Text style={[styles.gradientText, { opacity: 0 }]}>
                                     Zentra
                                 </Text>
                             </LinearGradient>

@@ -1,3 +1,4 @@
+<<<<<<< Updated upstream
 import { Image } from 'expo-image';
 import { Platform, StyleSheet } from 'react-native';
 
@@ -5,9 +6,29 @@ import { HelloWave } from '@/components/HelloWave';
 import ParallaxScrollView from '@/components/ParallaxScrollView';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
+=======
+import React, { useState } from "react";
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Dimensions } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { allCategories } from "../components/data";
+import { transactions } from "../components/data";
+import { LinearGradient } from "expo-linear-gradient";
+import MaskedView from "@react-native-masked-view/masked-view";
+import MonthlySummaryScreen from "../components/PieChart";
+import { SafeAreaView } from "react-native-safe-area-context";
+import MonthlySummary from "../components/PieChart";
 
-export default function HomeScreen() {
+const screenWidth = Dimensions.get("window").width;
+const User = {
+  name: 'Sanni'
+}
+
+export default function OverviewScreen() {
+  const [tab, setTab] = useState<"child" | "parent">("child");
+>>>>>>> Stashed changes
+
   return (
+<<<<<<< Updated upstream
     <ParallaxScrollView
       headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
       headerImage={
@@ -52,10 +73,83 @@ export default function HomeScreen() {
         </ThemedText>
       </ThemedView>
     </ParallaxScrollView>
+=======
+    <ScrollView>
+
+    
+    <View style={styles.container}>
+      {/* Header */}
+      <View style={styles.header}>
+        <View style={{display: 'flex', flexDirection: 'row', gap: 8, alignItems: 'center'}}>
+        <Text style={styles.headerText}>Hi</Text>
+        <MaskedView 
+          maskElement={
+          <Text style={styles.gradientText}>
+            {User.name}
+          </Text>
+          }>
+            <LinearGradient 
+              colors={['#DD5E89', '#EB8E90', '#F7BB97']} 
+              start={{ x: 0, y: 0 }} 
+              end={{ x: 1, y: 0 }}>
+        
+                <Text style={[styles.gradientText, { opacity: 0 }]}>
+                  {User.name}
+               </Text>
+            </LinearGradient>
+        </MaskedView>
+        <Text style={styles.headerText}>!</Text>
+        </View>
+        <MaskedView 
+          maskElement={
+          <Text style={styles.gradientText}>
+            <Ionicons
+                name="person"
+                size={24}/>
+          </Text>
+          }>
+            <LinearGradient 
+              colors={['#DD5E89', '#EB8E90', '#F7BB97']} 
+              start={{ x: 0, y: 0 }} 
+              end={{ x: 1, y: 0 }}>
+        
+                <Text style={[styles.gradientText, { opacity: 0 }]}>
+                  <Ionicons
+                  name="person"
+                  size={24}/>
+               </Text>
+            </LinearGradient>
+        </MaskedView>
+        
+      </View>
+      {/*header*/}
+      
+      <Text style ={styles.sectionTitle}>Overview</Text>
+
+      {/* Biểu đồ */}
+      <MonthlySummary/>
+
+      {/* Tabs */}
+          <Text style ={styles.sectionTitle}>Details</Text>
+
+      {/* Danh mục */}
+      <View>
+        {allCategories.map((cat, idx) => (
+          <View key={idx} style={styles.categoryItem}>
+            <Ionicons name={cat.icon as any} size={24} color={cat.color} />
+            <Text style={styles.categoryName}>{cat.name}</Text>
+            <Text style={styles.hidden}>*******</Text>
+          </View>
+        ))}
+      </View>
+    </View>
+    </ScrollView>
+>>>>>>> Stashed changes
   );
 }
 
 const styles = StyleSheet.create({
+<<<<<<< Updated upstream
   titleContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -72,4 +166,91 @@ const styles = StyleSheet.create({
     left: 0,
     position: 'absolute',
   },
+=======
+  container: { flex: 1, backgroundColor: "#f3f2f8", fontFamily: 'inter', paddingBottom: 100},
+  header: { paddingTop: 50, paddingBottom: 10, paddingHorizontal: 16, display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#fff'},
+  headerText: { fontSize: 20, fontWeight: "bold" },
+
+  overviewBox: {
+    margin: 16,
+    padding: 16,
+    backgroundColor: "#fff0f5",
+    borderRadius: 12,
+  },
+  rowBetween: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+  },
+  itemBox: {
+    alignItems: "center",
+  },
+  label: { fontWeight: "bold", marginBottom: 4 },
+  hidden: { fontSize: 20, color: "#999" },
+  summaryText: { marginTop: 10, fontSize: 12, color: "green" },
+
+  tabRow: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+    marginBottom: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: "#eee",
+  },
+  tab: {
+    paddingVertical: 10,
+  },
+  activeTab: {
+    borderBottomWidth: 2,
+    borderBottomColor: "#f72aa4",
+  },
+  tabText: {
+    color: "#888",
+  },
+  activeTabText: {
+    color: "#f72aa4",
+    fontWeight: "bold",
+  },
+
+  categoryItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 16,
+    justifyContent: "space-between",
+    borderBottomWidth: 1,
+    borderBottomColor: "#eee",
+  },
+  categoryName: {
+    flex: 1,
+    marginLeft: 16,
+    fontSize: 16,
+  },
+
+  bottomNav: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+    alignItems: "center",
+    borderTopWidth: 1,
+    borderTopColor: "#eee",
+    paddingVertical: 12,
+    backgroundColor: "#fff",
+  },
+  navLabel: { fontSize: 10, marginTop: 4, textAlign: "center" },
+
+  addBtn: {
+    backgroundColor: "#f72aa4",
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    justifyContent: "center",
+    alignItems: "center",
+    marginTop: -28,
+    borderWidth: 4,
+    borderColor: "#fff",
+  },
+  gradientText: {
+        fontFamily: 'Inter',
+        fontSize: 26,
+        fontWeight: 'bold',
+    },
+  sectionTitle: { fontSize: 16, fontWeight: "bold", marginVertical: 10, padding: 16},
+>>>>>>> Stashed changes
 });

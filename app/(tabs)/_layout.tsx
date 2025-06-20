@@ -1,3 +1,4 @@
+<<<<<<< Updated upstream
 import { Tabs } from 'expo-router';
 import React from 'react';
 import { Platform } from 'react-native';
@@ -7,13 +8,20 @@ import { IconSymbol } from '@/components/ui/IconSymbol';
 import TabBarBackground from '@/components/ui/TabBarBackground';
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
+=======
+import { Tabs } from "expo-router";
+import React from "react";
+import CustomTabBar from "../components/CustomTabBar";
+>>>>>>> Stashed changes
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
 
   return (
     <Tabs
+      tabBar={(props) => <CustomTabBar {...props} />}
       screenOptions={{
+<<<<<<< Updated upstream
         tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
         headerShown: false,
         tabBarButton: HapticTab,
@@ -40,5 +48,10 @@ export default function TabLayout() {
         }}
       />
     </Tabs>
+=======
+        headerShown: false,
+      }}
+    />
+>>>>>>> Stashed changes
   );
 }
