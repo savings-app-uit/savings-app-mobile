@@ -1,15 +1,3 @@
-import React, { useState } from "react";
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  Modal,
-  StyleSheet,
-  ScrollView,
-  Dimensions,
-} from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-
 
 export const allCategories = [
   { name: "Chợ, siêu thị", icon: "basket", color: "#f46e45" },
@@ -38,4 +26,58 @@ export const transactions = [
     { id: '10', date: '2025-06-13', title: 'Cà phê với bạn', category: 'Giải trí', amount: 60000 },
     { id: '11', date: '2025-06-12', title: 'Gửi xe tháng', category: 'Hóa đơn', amount: 100000 },
     { id: '12', date: '2025-06-11', title: 'Thanh toán Internet', category: 'Hóa đơn', amount: 200000 },
+    { id: '13', date: '2025-06-11', title: 'Giveaway', category: 'Từ thiện', amount: 10000 },
   ];
+
+
+  export function getChartData(currentMonth: string) {
+  const filteredTransactions = transactions.filter((tx) =>
+    tx.date.startsWith(currentMonth)
+  );
+
+  const totalExpense = filteredTransactions.reduce(
+    (sum, tx) => sum + tx.amount,
+    0
+  );
+
+  const pieDataRaw = filteredTransactions.reduce((acc, tx) => {
+    const existing = acc.find((item) => item.name === tx.category);
+    if (existing) {
+      existing.amount += tx.amount;
+    } else {
+      acc.push({ name: tx.category, amount: tx.amount });
+    }
+    return acc;
+  }, [] as { name: string; amount: number }[]);
+
+  pieDataRaw.sort((a, b) => b.amount - a.amount);
+
+  const topItems = pieDataRaw.slice(0, 4);
+  const otherItems = pieDataRaw.slice(4);
+
+  const chartWithPercent = topItems.map((item) => {
+    const cat = allCategories.find((c) => c.name === item.name);
+    const percent = ((item.amount / totalExpense) * 100).toFixed(0);
+    return {
+      name: item.name,
+      amount: item.amount,
+      percent,
+      icon: cat?.icon,
+      color: cat?.color ?? "#ccc",
+    };
+  });
+
+  if (otherItems.length > 0) {
+    const otherAmount = otherItems.reduce((sum, item) => sum + item.amount, 0);
+    const otherPercent = ((otherAmount / totalExpense) * 100).toFixed(0);
+    chartWithPercent.push({
+      name: "Còn lại",
+      amount: otherAmount,
+      percent: otherPercent,
+      icon: "grid",
+      color: "#ccc",
+    });
+  }
+
+  return { chartWithPercent, totalExpense };
+}

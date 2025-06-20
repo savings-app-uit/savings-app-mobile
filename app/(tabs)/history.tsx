@@ -8,6 +8,7 @@
   import { allCategories } from "../components/data";
   // Hiện tại bạn chưa có:
 import { transactions } from "../components/data";
+import AddCategoryModal from "../components/AddCategoryModal";
 
 
   // Define the Category type to include color
@@ -27,6 +28,7 @@ import { transactions } from "../components/data";
       const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
       const [currentMonth, setCurrentMonth] = useState(new Date().toISOString().slice(0, 7));
       const [categories, setCategories] = useState<Category[]>(allCategories as Category[]);
+      const [addModalOpen, setAddModalOpen] = useState(false);
       
       
 
@@ -248,9 +250,16 @@ import { transactions } from "../components/data";
     visible={filterVisible}
     onClose={() => setFilterVisible(false)}
     onApply={(selected) => setSelectedCategories(selected)}
-    onAddCategory={() =>{} }
+    onAddCategory={() => setAddModalOpen(true) }
     categories={categories}
   />
+
+  <AddCategoryModal
+    visible={addModalOpen}
+    onClose={() => setAddModalOpen(false)}
+    onSave={()=> null}
+  />
+
           </View>
       );
       }
@@ -274,7 +283,9 @@ import { transactions } from "../components/data";
     dataCard: {
       backgroundColor: '#fff',
       margin: -12,
-      borderRadius: 12
+      borderRadius: 12,
+      paddingBottom: 12,
+      paddingHorizontal: 12
     },
     cardDate: {
       fontSize: 12,
@@ -284,8 +295,8 @@ import { transactions } from "../components/data";
     },
     transactionRow: {
       padding: 6,
-      borderBottomWidth: 0.5,
-      borderBottomColor: '#ccc',
+      borderBottomWidth: 1,
+      borderBottomColor: '#eee',
       // backgroundColor: '#fff',
       // borderRadius: 12
     },
