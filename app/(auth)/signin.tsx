@@ -33,39 +33,31 @@ export default function SignIn() {
 
     const handleGoToEnterEmail = () => {
         router.push('/(auth)/enteremail');
+    };    const handleGoToForgotPassword = () => {
+        router.push('/(auth)/forgotpassword');
     };
 
-    const handleGoToForgotPassword = () => {
-        router.push('/(auth)/forgotpassword');
-    };    const handleLogin = async () => {
+    const handleLogin = async () => {
         if (!email || !password) {
-            Alert.alert('Error', 'Please enter both email and password.');
+            Alert.alert('Error', 'Please enter both email and password.');            
             return;
         }
-          setLoading(true);
+        
+        setLoading(true);
         try {
             console.log('Attempting login with:', { email, password: '***' });
             const response = await signInAPI(email, password);
             console.log('Login response:', response);
-            
-            if (response.token && response.message) {
+              if (response.token && response.message) {
                 await AsyncStorage.setItem('accessToken', response.token);
+                
                 if (response.user) {
                     await AsyncStorage.setItem('userInfo', JSON.stringify(response.user));
                 }
                 
-                Alert.alert(
-                    'Success',
-                    response.message || 'Login successful',
-                    [
-                        {
-                            text: 'OK',
-                            onPress: () => {
-                                router.replace('/(tabs)');
-                            }
-                        }
-                    ]
-                );
+                router.replace('/(tabs)');
+                
+                // Alert.alert('Success', response.message || 'Login successful');
             } else {
                 Alert.alert('Login Failed', response.message || 'Invalid credentials. Please try again.');
             }
@@ -76,10 +68,10 @@ export default function SignIn() {
             if (error.response) {
                 const serverMessage = error.response.data?.message;
                 if (serverMessage) {
-                    errorMessage = serverMessage;
-                } else {
+                    errorMessage = serverMessage;                } else {
                     errorMessage = `Server error: ${error.response.status}`;
-                }            } else if (error.request) {
+                }
+            } else if (error.request) {
                 errorMessage = 'No response from server. Please check your connection.';
             } else {
                 errorMessage = error.message || 'Request setup error';
@@ -90,10 +82,6 @@ export default function SignIn() {
             setLoading(false);
         }
     };
-
-    const handleGoToDashboard = () => {
-        router.push('/(tabs)/dashboard');
-    }
 
     // const handleLogin = () => {
     //     // Here you would normally validate credentials
@@ -123,10 +111,8 @@ export default function SignIn() {
 
             <ImageBackground
                 source={bgImage} 
-                style={styles.container}>
-
+                style={styles.container}>                
                 <View style={{ flexGrow: 1}}>
-                    
                     <Image 
                         source={logo}
                         style={styles.toplogo}
@@ -179,9 +165,9 @@ export default function SignIn() {
                             placeholderTextColor='#999'
                             secureTextEntry={!showPassword}
                             autoCapitalize='none'
-                            autoCorrect={false}
+                            autoCorrect={false}                            
                             value={password}
-                            onChangeText={setPassword}/>  
+                            onChangeText={setPassword}/>
 
                         <TouchableOpacity
                             onPress={toggleShowPassword}
@@ -191,13 +177,14 @@ export default function SignIn() {
                                 size={20}
                                 color="#999"/>
                         </TouchableOpacity>
-                    </View>
-
+                    </View>                    
                     <TouchableOpacity onPress={handleGoToForgotPassword}>
                         <Text style={[styles.textlink, {marginTop: 10, alignSelf: 'flex-end', marginRight: 40}]}>
                             Forgot Password?
                         </Text>
-                    </TouchableOpacity>                    <TouchableOpacity onPress={handleLogin} disabled={loading}>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity onPress={handleLogin} disabled={loading}>
                         <LinearGradient 
                             start={{x: 0, y: 0}} 
                             end={{x: 1, y: 0}} 
