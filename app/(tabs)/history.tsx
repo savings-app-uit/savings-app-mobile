@@ -1,16 +1,12 @@
-      import { Ionicons } from "@expo/vector-icons";
+import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import React, { useState } from "react";
 import { FlatList, LayoutAnimation, Platform, StyleSheet, Text, TouchableOpacity, UIManager, View } from "react-native";
 import { Calendar } from "react-native-calendars";
-import { allCategories } from "../component/data";
-import Filter from "../component/filter";
-  // Hiện tại bạn chưa có:
 import AddCategoryModal from "../component/AddCategoryModal";
-import { transactions } from "../component/data";
+import { allCategories, transactions } from "../component/data";
+import Filter from "../component/filter";
 
-
-  // Define the Category type to include color
   type Category = {
     name: string;
     icon: string;
@@ -221,7 +217,7 @@ import { transactions } from "../component/data";
               <View style={{display: 'flex', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 8}}>
                   <View style={{alignItems: "flex-start", gap: 8}}>
                       <Ionicons
-                      name={getCategoryIcon(tx.category)}
+                      name={getCategoryIcon(tx.category) as any}
                       size={24}
                       color={cat?.color ?? "#000"}
                       style={{ marginRight: 8}}
