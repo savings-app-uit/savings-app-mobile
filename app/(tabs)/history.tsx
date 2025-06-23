@@ -1,4 +1,5 @@
-import { getAllTransactionsAPI, getCategoriesAPI } from '@/utils/api';
+import { useTransactionContext } from '@/contexts/TransactionContext';
+import { getCategoriesAPI, getExpensesAPI, getIncomesAPI } from '@/utils/api';
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import React, { useEffect, useState } from "react";
@@ -17,6 +18,7 @@ import AddCategoryModal from "../component/AddCategoryModal";
 import Filter from "../component/filter";
 
 type Category = {
+  id: string;
   name: string;
   icon: string;
   color: string;
@@ -27,6 +29,7 @@ if (Platform.OS === "android") {
 }
 
 export default function HistoryScreen() {
+  const { reloadTrigger } = useTransactionContext();
   const [expanded, setExpanded] = useState(true);
   const [filterVisible, setFilterVisible] = useState(false);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
@@ -36,26 +39,55 @@ export default function HistoryScreen() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<"expense" | "income">("expense");
-  const [transactions, setTransactions] = useState<any[]>([]);
-  useEffect(() => {
-    // Fetch categories
-    getCategoriesAPI(activeTab).then((res) => {
-      const arr = Array.isArray(res.data) ? res.data : [];
-      setCategories(arr.map((cat: ICategory) => ({
+  const [transactions, setTransactions] = useState<any[]>([]);  useEffect(() => {
+    console.log('History - Loading data for:', { activeTab, currentMonth, reloadTrigger });
+    
+    Promise.all([
+      getCategoriesAPI(activeTab),
+      activeTab === 'expense' ? getExpensesAPI() : getIncomesAPI()
+    ]).then(([categoriesRes, transactionsRes]) => {
+      console.log('History - Categories response:', categoriesRes);
+      console.log('History - Transactions response:', transactionsRes);
+      
+      const arr = Array.isArray(categoriesRes) ? categoriesRes : [];
+      const processedCategories = arr.map((cat: ICategory) => ({
+        id: cat.id,
         name: cat.name,
-        icon: cat.icon.icon, // API trả về cat.icon.icon
-        color: cat.icon.color, // API trả về cat.icon.color
-      })));
+        icon: cat.icon.icon,
+        color: cat.icon.color,
+      }));
+      setCategories(processedCategories);
+      
+      const transactions = Array.isArray(transactionsRes) ? transactionsRes : [];
+      
+      const processedTransactions = transactions.map((tx: any) => {
+        let dateString = '';
+        if (tx.date && tx.date._seconds) {
+          const date = new Date(tx.date._seconds * 1000);
+          dateString = date.toISOString().split('T')[0]; 
+        } else if (typeof tx.date === 'string') {
+          dateString = tx.date.split('T')[0]; 
+        }
+        
+        const category = processedCategories.find((cat: any) => cat.id === tx.categoryId);
+        const categoryName = category?.name || tx.categoryName || tx.category || 'Khác';
+        
+        return {
+          ...tx,
+          date: dateString,
+          category: categoryName,
+          title: tx.description || tx.title || ''
+        };
+      });
+      
+      console.log('History - Processed transactions:', processedTransactions);
+      setTransactions(processedTransactions);
+    }).catch((error) => {
+      console.error('History - Error fetching data:', error);
+      setCategories([]);
+      setTransactions([]);
     });
-    // Fetch transactions
-    getAllTransactionsAPI().then((res) => {
-      const data =
-        activeTab === 'expense'
-          ? res.data?.expenses ?? []
-          : res.data?.incomes ?? [];
-      setTransactions(data);
-    });
-  }, [activeTab]);
+  }, [activeTab, reloadTrigger]);
 
   const getCategoryIcon = (category: string) => {
     const cat = categories.find((c) => c.name === category);
@@ -201,9 +233,9 @@ export default function HistoryScreen() {
                         </Text>
                       </TouchableOpacity>
                     ))}
-                  </View>
-
-                  <View style={{ alignItems: "center", marginTop: 4 }}>                    <Text
+                  </View>                 
+                  <View style={{ alignItems: "center", marginTop: 4 }}>
+                    <Text
                       style={{
                         color: "black",
                         fontSize: 14,

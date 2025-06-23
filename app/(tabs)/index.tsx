@@ -1,3 +1,4 @@
+import { useTransactionContext } from '@/contexts/TransactionContext';
 import { Ionicons } from "@expo/vector-icons";
 import MaskedView from "@react-native-masked-view/masked-view";
 import { LinearGradient } from "expo-linear-gradient";
@@ -19,15 +20,23 @@ const User = {
 };
 
 export default function OverviewScreen() {
+  const { reloadTrigger } = useTransactionContext();
   const [chartWithPercent, setChartWithPercent] = useState<any[]>([]);
   const [selectedMonth, setSelectedMonth] = useState<string>(new Date().toISOString().slice(0, 7));
   const [otherItemsDetail, setOtherItemsDetail] = useState<any[]>([]);
   const [selectedCategoryName, setSelectedCategoryName] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<"pie" | "bar">("pie");
   const [activeTab, setActiveTab] = useState<"expense" | "income">("expense");
-
+  const [loading, setLoading] = useState(false);
 
   const filteredChart = chartWithPercent.filter(item => item.name !== "Còn lại");
+
+  const handleDataChange = ({ currentMonth, chartWithPercent, otherItemsDetail }: any) => {
+    console.log('Index.tsx - Data changed:', { currentMonth, chartWithPercent, otherItemsDetail });
+    setSelectedMonth(currentMonth);
+    setChartWithPercent(chartWithPercent || []);
+    setOtherItemsDetail(otherItemsDetail || []);
+  };
 
   return (
     <ScrollView style={{flex: 1, backgroundColor: "#f3f2f8"}}>
@@ -92,30 +101,29 @@ export default function OverviewScreen() {
             <MonthlySummary
               setCurrentMonth={setSelectedMonth}
               currentMonth={selectedMonth}
-              onDataChange={({ currentMonth, chartWithPercent, otherItemsDetail }) => {
-                setSelectedMonth(currentMonth);
-                setChartWithPercent(chartWithPercent);
-                setOtherItemsDetail(otherItemsDetail);
-              }}
+              onDataChange={handleDataChange}
               onSelectCategory={(name) => setSelectedCategoryName(name)}
               activeTab={activeTab}
               setActiveTab={setActiveTab}
+              reloadTrigger={reloadTrigger}
             />
           ) : (
             <MonthlyBarChart
               currentMonth={selectedMonth}
               setCurrentMonth={setSelectedMonth}
-              onDataChange={({ chartWithPercent, otherItemsDetail }) => {
-                setChartWithPercent(chartWithPercent);
-                setOtherItemsDetail(otherItemsDetail);
-              }}
+              onDataChange={handleDataChange}
               activeTab={activeTab}
               setActiveTab={setActiveTab}
+              reloadTrigger={reloadTrigger}
             />
           )}
         </View>
 
         <Text style={styles.sectionTitle}>Chi tiết giao dịch</Text>
+        {/* Debug info */}
+        {/* <Text style={{ fontSize: 12, color: '#666', paddingHorizontal: 16, marginBottom: 8 }}>
+          Debug: {filteredChart.length} filtered items, {otherItemsDetail.length} other items
+        </Text> */}
         <View style={styles.list}>
           {filteredChart.length === 0 && otherItemsDetail.length === 0 ? (
             <Text style={{ textAlign: "center", color: "gray", marginTop: 32 }}>
