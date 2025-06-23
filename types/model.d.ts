@@ -96,17 +96,18 @@ declare global {
     interface ITransactionsResponse {
         message: string;
         data?: ITransaction[];
-    }
-
-    interface ICategory {
+    }    interface ICategory {
         id: string;
         name: string;
-        iconId: string;
+        icon: {
+            icon: string;
+            color: string;
+        };
         type: 'expense' | 'income';
         isDefault: boolean;
-        userId?: string;
-        createdAt: string;
-        updatedAt: string;
+        userId?: string | null;
+        createdAt?: string;
+        updatedAt?: string;
     }
 
     interface IAddCategoryRequest {
@@ -118,10 +119,48 @@ declare global {
     interface ICategoryResponse {
         message: string;
         data?: ICategory;
-    }
-
-    interface ICategoriesResponse {
+    }    interface ICategoriesResponse {
         message: string;
         data?: ICategory[];
+    }
+
+    // Interface cho response trực tiếp từ API (array)
+    interface ICategoriesArrayResponse extends Array<ICategory> {}// ===== PROFILE INTERFACES =====
+
+    interface IProfile {
+        id: string;
+        name: string;
+        email: string;
+        phone?: string;
+        imageUrl?: string;
+        createdAt: string;
+        updatedAt: string;
+    }
+
+    interface IUpdateProfileRequest {
+        name?: string;
+        phone?: string;
+        imageUrl?: string;
+    }
+
+    interface IProfileResponse {
+        message: string;
+        data?: IProfile;
+    }
+
+    interface IChangePasswordRequest {
+        oldPassword: string;
+        newPassword: string;
+    }    // ===== ICON INTERFACES =====
+    
+    interface IIcon {
+        id: string;
+        icon: string;
+        color: string;
+    }
+
+    interface IIconsResponse {
+        message: string;
+        data?: IIcon[];
     }
 }

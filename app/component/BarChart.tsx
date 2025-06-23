@@ -7,7 +7,7 @@ import {
   View,
 } from "react-native";
 import { BarChart } from "react-native-gifted-charts";
-import { allCategories, transactions, income } from "./data";
+import { getChartData } from './data';
 
 type MonthlyBarChartProps = {
   activeTab: "expense" | "income";
@@ -40,6 +40,7 @@ export default function MonthlyBarChart({
   const [chartData, setChartData] = useState<any[]>([]);
   const [maxValue, setMaxValue] = useState(7.5);
   const [totalAmount, setTotalAmount] = useState(0);
+  const [loading, setLoading] = useState(false);
 
   const monthLabels = Array.from({ length: 12 }, (_, i) => {
     const date = new Date();
@@ -57,86 +58,15 @@ export default function MonthlyBarChart({
     date.setMonth(date.getMonth() + offset);
     return date.toISOString().slice(0, 7);
   }
-
-  const sourceData = activeTab === 'expense' ? transactions : income;
-
   useEffect(() => {
-    const prevMonth = currentIndex > 0 ? monthLabels[currentIndex - 1] : null;
-    const thisMonth = monthLabels[currentIndex];
-    const nextMonth = currentIndex < monthLabels.length - 1 ? monthLabels[currentIndex + 1] : null;
-
-    const visibleMonths = [prevMonth, thisMonth, nextMonth].filter(Boolean);
-
-    const data = visibleMonths.map((month) => {
-      const sum = sourceData
-        .filter((tx) => tx.date.startsWith(month!.key))
-        .reduce((acc, tx) => acc + tx.amount, 1);
-
-      const valueInMil = Number((sum / 1_000_000).toFixed(1));
-      let frontColor = "#B8D4F0";
-      if (month!.key === currentMonth) {
-        frontColor = "#2196F3";
-      }
-
-      return {
-        label: month!.label,
-        value: valueInMil,
-        frontColor,
-      };
-    });
-
-    setChartData(data);
-
-    const currentMonthTotal = sourceData
-      .filter((tx) => tx.date.startsWith(currentMonth))
-      .reduce((sum, tx) => sum + tx.amount, 0);
-    setTotalAmount(currentMonthTotal);
-
-    const maxDataValue = Math.max(...data.map((d) => d.value));
-    const MAX_SECTIONS = 5;
-    const sectionStep = Math.ceil((maxDataValue / MAX_SECTIONS) * 2) / 2;
-    const noOfSections = Math.min(MAX_SECTIONS, Math.ceil(maxDataValue / sectionStep));
-    const yAxisLabels = Array.from({ length: noOfSections + 1 }, (_, i) =>
-      `${(i * sectionStep).toLocaleString("vi-VN", {
-        minimumFractionDigits: 1,
-        maximumFractionDigits: 1,
-      })}`
-    );
-
-    setMaxValue(sectionStep * noOfSections);
-
-    const pieData = sourceData
-      .filter((tx) => tx.date.startsWith(currentMonth))
-      .reduce((acc, tx) => {
-        const existing = acc.find((item) => item.name === tx.category);
-        if (existing) {
-          existing.amount += tx.amount;
-        } else {
-          acc.push({ name: tx.category, amount: tx.amount });
-        }
-        return acc;
-      }, [] as { name: string; amount: number }[]);
-
-    pieData.sort((a, b) => b.amount - a.amount);
-    const top = pieData.slice(0, 4);
-    const other = pieData.slice(4);
-
-    const chartWithPercent = top.map((item) => {
-      const cat = allCategories.find((c) => c.name === item.name);
-      return {
-        name: item.name,
-        amount: item.amount,
-        percent: ((item.amount / currentMonthTotal) * 100).toFixed(0),
-        icon: cat?.icon,
-        color: cat?.color ?? "#ccc",
-      };
-    });
-
-    onDataChange?.({
-      currentMonth,
-      chartWithPercent,
-      otherItemsDetail: other,
-    });
+    setLoading(true);
+    (async () => {
+      const { chartWithPercent, totalExpense } = await getChartData(currentMonth);
+      setChartData(chartWithPercent);
+      setTotalAmount(typeof totalExpense === 'number' ? totalExpense : 0);
+      onDataChange?.({ currentMonth, chartWithPercent, otherItemsDetail: chartWithPercent.slice(4) });
+      setLoading(false);
+    })();
   }, [currentMonth, activeTab]);
 
   const displayMonth = new Date(currentMonth + "-01");
@@ -179,10 +109,8 @@ export default function MonthlyBarChart({
                 </Text>
               </TouchableOpacity>
             ))}
-          </View>
-
-          <Text style={styles.amountText}>
-            {totalAmount.toLocaleString("vi-VN")}đ
+          </View>          <Text style={styles.amountText}>
+            {typeof totalAmount === 'number' ? totalAmount.toLocaleString("vi-VN") : '0'}đ
           </Text>
         </View>
 

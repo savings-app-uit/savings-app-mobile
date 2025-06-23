@@ -15,8 +15,8 @@ const screenHeight = Dimensions.get("window").height;
 interface Props {
   visible: boolean;
   onClose: () => void;
-  onSelect: (selected: string) => void;
-  categories: { name: string; icon: string; color: string }[];
+  onSelect: (selected: string, selectedId?: string) => void;
+  categories: { id?: string; name: string; icon: string; color: string }[];
   onAddCategory: () => void;
 }
 
@@ -40,7 +40,7 @@ export default function CategoryPicker({
                   key={idx}
                   style={styles.iconContainer}
                   onPress={() => {
-                    onSelect(cat.name);
+                    onSelect(cat.name, cat.id);
                     onClose();
                   }}
                 >

@@ -2,7 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import React, { useEffect, useState } from "react";
 import { Dimensions, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { PieChart } from "react-native-gifted-charts";
-import { allCategories, transactions, income } from "./data";
+import { getChartData } from "./data";
 
 const screenWidth = Dimensions.get("window").width;
 
@@ -36,6 +36,10 @@ export default function MonthlySummary({
   setActiveTab
 }: MonthlySummaryProps) {
   const [selectedSlice, setSelectedSlice] = useState<string | null>(null);
+  const [chartWithPercent, setChartWithPercent] = useState<any[]>([]);
+  const [otherItemsDetail, setOtherItemsDetail] = useState<any[]>([]);
+  const [totalAmount, setTotalAmount] = useState(0);
+  const [loading, setLoading] = useState(false);
 
   const getMonthOffset = (offset: number) => {
     const date = new Date(currentMonth + "-01");
@@ -43,54 +47,19 @@ export default function MonthlySummary({
     return date.toISOString().slice(0, 7);
   };
 
-  const dataSource = activeTab === "expense" ? transactions : income;
-  const filteredTransactions = dataSource.filter((tx) =>
-    tx.date.startsWith(currentMonth)
-  );
+  useEffect(() => {
+    setLoading(true);
+    (async () => {
+      const { chartWithPercent, totalExpense } = await getChartData(currentMonth);
+      setChartWithPercent(chartWithPercent);
+      setTotalAmount(typeof totalExpense === 'number' ? totalExpense : 0);
+      setOtherItemsDetail(chartWithPercent.slice(4));
+      onDataChange?.({ currentMonth, chartWithPercent, otherItemsDetail: chartWithPercent.slice(4) });
+      setLoading(false);
+    })();
+  }, [currentMonth, activeTab]);
 
-  const totalAmount = filteredTransactions.reduce(
-    (sum, tx) => sum + tx.amount,
-    0
-  );
-
-  const pieDataRaw = filteredTransactions.reduce((acc, tx) => {
-    const existing = acc.find((item) => item.name === tx.category);
-    if (existing) {
-      existing.amount += tx.amount;
-    } else {
-      acc.push({ name: tx.category, amount: tx.amount });
-    }
-    return acc;
-  }, [] as { name: string; amount: number }[]);
-
-  pieDataRaw.sort((a, b) => b.amount - a.amount);
-
-  const topItems = pieDataRaw.slice(0, 4);
-  const otherItems = pieDataRaw.slice(4);
-
-  const chartWithPercent = topItems.map((item) => {
-    const cat = allCategories.find((c) => c.name === item.name);
-    const percent = ((item.amount / totalAmount) * 100).toFixed(0);
-    return {
-      name: item.name,
-      amount: item.amount,
-      percent,
-      icon: cat?.icon,
-      color: cat?.color ?? "#ccc",
-    };
-  });
-
-  if (otherItems.length > 0) {
-    const otherAmount = otherItems.reduce((sum, item) => sum + item.amount, 0);
-    const otherPercent = ((otherAmount / totalAmount) * 100).toFixed(0);
-    chartWithPercent.push({
-      name: "Còn lại",
-      amount: otherAmount,
-      percent: otherPercent,
-      icon: "grid",
-      color: "#808080",
-    });
-  }
+  const displayDate = new Date(currentMonth + "-01");
 
   const giftedPieData = chartWithPercent.map((item) => ({
     value: item.amount,
@@ -102,17 +71,6 @@ export default function MonthlySummary({
     ...(selectedSlice === item.name ? { color: item.color } : {}),
   }));
 
-  const displayDate = new Date(currentMonth + "-01");
-
-  useEffect(() => {
-    if (onDataChange) {
-      onDataChange({
-        currentMonth,
-        chartWithPercent,
-        otherItemsDetail: otherItems,
-      });
-    }
-  }, [currentMonth, activeTab]);
   const displayMonth = new Date(currentMonth + "-01");
 
   return (
@@ -160,7 +118,7 @@ export default function MonthlySummary({
 </View>
           
           <Text style={styles.amountText}>
-            {totalAmount.toLocaleString("vi-VN")}đ
+            {typeof totalAmount === 'number' ? totalAmount.toLocaleString('vi-VN') : '0'}đ
           </Text>
         </View>
 
@@ -169,7 +127,13 @@ export default function MonthlySummary({
         </TouchableOpacity>
       </View>
 
-      {filteredTransactions.length === 0 ? (
+      {loading ? (
+        <View style={{ alignItems: "center", paddingVertical: 32 }}>
+          <Text style={{ color: "#888" }}>
+            Đang tải dữ liệu...
+          </Text>
+        </View>
+      ) : chartWithPercent.length === 0 ? (
         <View style={{ alignItems: "center", paddingVertical: 32 }}>
           <Text style={{ color: "#888" }}>
             Không có giao dịch trong tháng này

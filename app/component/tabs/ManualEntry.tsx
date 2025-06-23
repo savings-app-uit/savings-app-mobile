@@ -1,21 +1,19 @@
-import React, { useState } from 'react';
+import { addCategoryAPI, getCategoriesAPI } from '@/utils/api';
+import DateTimePicker from '@react-native-community/datetimepicker';
+import { LinearGradient } from 'expo-linear-gradient';
+import React, { useEffect, useState } from 'react';
 import {
-  View,
+  Alert,
+  Keyboard,
+  StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
-  StyleSheet,
-  ScrollView,
-  Keyboard,
-  Platform,
+  View
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import DateTimePicker from '@react-native-community/datetimepicker';
-import CategoryPicker from '../CategoryPicker';
-import { exCategories, inCategories } from '../data';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
-import { LinearGradient } from 'expo-linear-gradient';
 import AddCategoryModal from '../AddCategoryModal';
+import CategoryPicker from '../CategoryPicker';
 
 
 export default function ManualTransactionForm() {
@@ -23,12 +21,57 @@ export default function ManualTransactionForm() {
   const [amount, setAmount] = useState('');
   const [date, setDate] = useState(new Date());
   const [category, setCategory] = useState('');
+  const [categoryId, setCategoryId] = useState('');
   const [note, setNote] = useState('');
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [showAddCategoryModal, setShowAddCategoryModal] = useState(false);
-  const [exCategoryList, setExCategoryList] = useState(exCategories);
-  const [inCategoryList, setInCategoryList] = useState(inCategories);
+  const [exCategoryList, setExCategoryList] = useState<any[]>([]);
+  const [inCategoryList, setInCategoryList] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  // Load categories from API
+  useEffect(() => {
+    loadCategories();
+  }, []);
+  useEffect(() => {
+    loadCategories();
+    // Reset category when switching tabs
+    setCategory('');
+    setCategoryId('');
+  }, [activeTab]);  const loadCategories = async () => {
+    setLoading(true);
+    try {
+      console.log('Loading categories for type:', activeTab);
+      const response = await getCategoriesAPI(activeTab);
+      console.log('API Response:', response);
+      
+      if (response && Array.isArray(response)) {
+        // API trả về trực tiếp array của categories (đã unwrap bởi interceptor)
+        const mappedCategories = response.map((cat: ICategory) => ({
+          id: cat.id,
+          name: cat.name,
+          icon: cat.icon.icon, // API trả về cat.icon.icon
+          color: cat.icon.color, // API trả về cat.icon.color
+        }));
+
+        console.log('Mapped categories:', mappedCategories);
+
+        if (activeTab === 'expense') {
+          setExCategoryList(mappedCategories);
+        } else {
+          setInCategoryList(mappedCategories);
+        }
+      } else {
+        console.log('No data in response or data is not array');
+      }
+    } catch (error) {
+      console.error('Error loading categories:', error);
+      Alert.alert('Lỗi', 'Không thể tải danh sách danh mục');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const formatDate = (d: Date) => {
     return `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth() + 1).toString().padStart(2, '0')}/${d.getFullYear()}`;
@@ -71,23 +114,26 @@ export default function ManualTransactionForm() {
               value={amount}
               onChangeText={setAmount}
               keyboardType="numeric"
-              placeholderTextColor="#666"
-              style={styles.amountInput}
+              placeholderTextColor="#666"              style={styles.amountInput}
             />
-
+            
             {/* Danh mục */}
             <Text style={styles.label}>Danh mục</Text>
-            <TouchableOpacity onPress={() => setShowCategoryModal(true)} style={styles.input}>
+            <TouchableOpacity 
+              onPress={() => setShowCategoryModal(true)} 
+              style={styles.input}
+              disabled={loading}
+            >
               <Text style={{ color: category ? '#000' : '#aaa' }}>
-                {category || 'Chọn danh mục'}
-              </Text>
+                {loading ? 'Đang tải...' : (category || 'Chọn danh mục')}              </Text>
             </TouchableOpacity>
-
+            
             <CategoryPicker
               visible={showCategoryModal}
               onClose={() => setShowCategoryModal(false)}
-              onSelect={(selectedCategory) => {
+              onSelect={(selectedCategory, selectedId) => {
                 setCategory(selectedCategory);
+                setCategoryId(selectedId || '');
               }}
               categories={activeTab === 'expense' ? exCategoryList : inCategoryList}
               onAddCategory={() => {
@@ -95,15 +141,25 @@ export default function ManualTransactionForm() {
                 setShowAddCategoryModal(true);
               }}
               />
-           {showAddCategoryModal && (
+              
+{showAddCategoryModal && (
   <AddCategoryModal
     visible={showAddCategoryModal}
-    onClose={() => setShowAddCategoryModal(false)}
-    onSave={(newCategory) => {
-      if (activeTab === 'expense') {
-        setExCategoryList((prev) => [...prev, newCategory]);
-      } else {
-        setInCategoryList((prev) => [...prev, newCategory]);
+    onClose={() => setShowAddCategoryModal(false)}    onSave={async (newCategory: any) => {
+      try {
+        // Call API to add new category
+        await addCategoryAPI({
+          name: newCategory.name,
+          iconId: newCategory.icon, // icon từ AddCategoryModal
+          type: activeTab
+        });        
+        // Reload categories from server after adding new category
+        await loadCategories();
+        
+        Alert.alert('Thành công', 'Đã thêm danh mục mới');
+      } catch (error) {
+        console.error('Error adding category:', error);
+        Alert.alert('Lỗi', 'Không thể thêm danh mục mới');
       }
     }}
   />
