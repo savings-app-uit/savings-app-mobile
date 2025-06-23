@@ -1,18 +1,17 @@
-import React, { useState, useEffect } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  Dimensions,
-  TouchableOpacity
-} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { allCategories } from "../component/data";
-import { LinearGradient } from "expo-linear-gradient";
 import MaskedView from "@react-native-masked-view/masked-view";
-import MonthlySummary from "../component/PieChart";
+import { LinearGradient } from "expo-linear-gradient";
+import React, { useState } from "react";
+import {
+  Dimensions,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View
+} from "react-native";
 import MonthlyBarChart from "../component/BarChart";
+import MonthlySummary from "../component/PieChart";
 
 const screenWidth = Dimensions.get("window").width;
 const User = {
@@ -150,16 +149,15 @@ export default function OverviewScreen() {
                 }]}
                 >
                   {otherItemsDetail.map((item, subIdx) => {
-                    const catData = allCategories.find((c) => c.name === item.name);
                     return (
                       <View key={subIdx} style={[styles.categoryItem, {paddingBottom: 24}]}> 
                         <Ionicons
-                          name={catData?.icon as any}
+                          name={'help-circle-outline' as any}
                           size={20}
-                          color={catData?.color || "#ccc"}
+                          color={'#666'}
                         />
                         <Text style={styles.categoryName}>{item.name}</Text>
-                        <Text style={styles.categoryAmount}>{item.amount.toLocaleString("vi-VN")}đ</Text>
+                        <Text style={styles.categoryAmount}>{typeof item.amount === 'number' ? item.amount.toLocaleString("vi-VN") : '0'}đ</Text>
                       </View>
                     );
                   })}

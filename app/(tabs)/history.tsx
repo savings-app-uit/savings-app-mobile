@@ -1,6 +1,7 @@
+import { getAllTransactionsAPI, getCategoriesAPI } from '@/utils/api';
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   FlatList,
   LayoutAnimation,
@@ -12,9 +13,8 @@ import {
   View,
 } from "react-native";
 import { Calendar } from "react-native-calendars";
-import Filter from "../component/filter";
-import { allCategories, transactions, income } from "../component/data";
 import AddCategoryModal from "../component/AddCategoryModal";
+import Filter from "../component/filter";
 
 type Category = {
   name: string;
@@ -33,22 +33,40 @@ export default function HistoryScreen() {
   const [currentMonth, setCurrentMonth] = useState(
     new Date().toISOString().slice(0, 7)
   );
-  const [categories, setCategories] = useState<Category[]>(
-    allCategories as Category[]
-  );
+  const [categories, setCategories] = useState<Category[]>([]);
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<"expense" | "income">("expense");
+  const [transactions, setTransactions] = useState<any[]>([]);
+  useEffect(() => {
+    // Fetch categories
+    getCategoriesAPI(activeTab).then((res) => {
+      const arr = Array.isArray(res.data) ? res.data : [];
+      setCategories(arr.map((cat: ICategory) => ({
+        name: cat.name,
+        icon: cat.icon.icon, // API trả về cat.icon.icon
+        color: cat.icon.color, // API trả về cat.icon.color
+      })));
+    });
+    // Fetch transactions
+    getAllTransactionsAPI().then((res) => {
+      const data =
+        activeTab === 'expense'
+          ? res.data?.expenses ?? []
+          : res.data?.incomes ?? [];
+      setTransactions(data);
+    });
+  }, [activeTab]);
 
   const getCategoryIcon = (category: string) => {
     const cat = categories.find((c) => c.name === category);
-    return cat ? cat.icon : "help-circle-outline";
+    return cat ? cat.icon : 'help-circle-outline';
   };
 
-  const filteredData = (activeTab === "expense" ? transactions : income).filter(
+  const filteredData = transactions.filter(
     (tx) =>
       (selectedCategories.length === 0 ||
-        selectedCategories.includes(tx.category)) &&
-      tx.date.startsWith(currentMonth)
+        selectedCategories.includes(tx.categoryName || tx.category)) &&
+      tx.date && tx.date.startsWith(currentMonth)
   );
 
   const totalAmount = filteredData.reduce((sum, tx) => sum + tx.amount, 0);
@@ -185,15 +203,14 @@ export default function HistoryScreen() {
                     ))}
                   </View>
 
-                  <View style={{ alignItems: "center", marginTop: 4 }}>
-                    <Text
+                  <View style={{ alignItems: "center", marginTop: 4 }}>                    <Text
                       style={{
                         color: "black",
                         fontSize: 14,
                         fontWeight: "bold",
                       }}
                     >
-                      {totalAmount.toLocaleString("vi-VN")}đ
+                      {typeof totalAmount === 'number' ? totalAmount.toLocaleString("vi-VN") : '0'}đ
                     </Text>
                   </View>
                 </View>
@@ -295,7 +312,7 @@ export default function HistoryScreen() {
                           }}
                         >
                           <Ionicons
-                            name={getCategoryIcon(tx.category)}
+                            name={getCategoryIcon(tx.category) as any}
                             size={24}
                             color={cat?.color ?? "#000"}
                             style={{ marginRight: 8 }}

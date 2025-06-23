@@ -4,44 +4,44 @@ import axios from "@/utils/api.customize";
 
 // 1. Signin
 export const signInAPI = (email: string, password: string) => {
-  const url = `api/signin`;
+  const url = `/api/signin`;
   return axios.post<ISigninResponse>(url, { email, password });
 };
 
 // 2. Forgot Password - Send Code
 export const forgotPasswordSendCodeAPI = (email: string) => {
-  const url = `api/forgot-password/send-code`;
+  const url = `/api/forgot-password/send-code`;
   return axios.post<IBackendRes<ICodeResponse>>(url, { email });
 };
 
 // 3. Forgot Password - Verify Code
 export const forgotPasswordVerifyCodeAPI = (email: string, code: string) => {
-  const url = `api/forgot-password/verify-code`;
+  const url = `/api/forgot-password/verify-code`;
   return axios.post<IBackendRes<ICodeResponse>>(url, { email, code });
 };
 
 // 4. Forgot Password - Reset
 export const forgotPasswordResetAPI = (email: string, code: string, newPassword: string) => {
-  const url = `api/forgot-password/reset`;
+  const url = `/api/forgot-password/reset`;
   return axios.post<IBackendRes<ICodeResponse>>(url, { email, code, newPassword });
 };
 
 
 // 5. Signup - Send Code
 export const signUpSendCodeAPI = (email: string) => {  
-  const url = `api/signup/send-code`;
+  const url = `/api/signup/send-code`;
   return axios.post<IBackendRes<ICodeResponse>>(url, { email });
 }
 
 // 6. Signup - Verify Code
 export const signUpVerifyCodeAPI = (email: string, code: string) => {
-  const url = `api/signup/verify-code`;
+  const url = `/api/signup/verify-code`;
   return axios.post<IBackendRes<ICodeResponse>>(url, { email, code });
 };
 
 // 7. Signup - Finalize
 export const signUpAPI = (username: string, phone: string, email: string, password: string, code: string) => {
-  const url = `api/signup`;
+  const url = `/api/signup`;
   return axios.post<ISignupResponse>(url, { username, phone, email, password, code });
 };
 
@@ -49,7 +49,7 @@ export const signUpAPI = (username: string, phone: string, email: string, passwo
 
 // 8. Add Transaction (Expense)
 export const addExpenseAPI = (data: IAddTransactionRequest) => {
-  const url = `api/transactions/expense`;
+  const url = `/api/transactions/expense`;
   return axios.post<ITransactionResponse>(url, data);
 };
 
@@ -87,7 +87,7 @@ export const deleteTransactionAPI = (transactionId: string) => {
 // 13. Get Categories
 export const getCategoriesAPI = (type: 'expense' | 'income') => {
   const url = `/api/categories?type=${type}`;
-  return axios.get<ICategoriesResponse>(url);
+  return axios.get<ICategory[]>(url);
 };
 
 // 14. Add Category (User-defined)
@@ -100,6 +100,38 @@ export const addCategoryAPI = (data: IAddCategoryRequest) => {
 export const deleteCategoryAPI = (categoryId: string) => {
   const url = `/api/categories/${categoryId}`;
   return axios.delete<{ message: string }>(url);
+};
+
+// 16. Get Icons
+export const getIconsAPI = () => {
+  const url = `/api/categories/icons`;
+  return axios.get<IIcon[]>(url);
+};
+
+// ===== PROFILE MANAGEMENT =====
+
+// 17. Get Profile
+export const getProfileAPI = () => {
+  const url = `/api/profile`;
+  return axios.get<IProfileResponse>(url);
+};
+
+// 18. Update Profile
+export const updateProfileAPI = (data: IUpdateProfileRequest) => {
+  const url = `/api/profile`;
+  return axios.put<IProfileResponse>(url, data);
+};
+
+// 19. Delete Profile
+export const deleteProfileAPI = () => {
+  const url = `/api/profile`;
+  return axios.delete<{ message: string }>(url);
+};
+
+// 20. Change Password
+export const changePasswordAPI = (data: IChangePasswordRequest) => {
+  const url = `/api/profile/change-password`;
+  return axios.post<{ message: string }>(url, data);
 };
 
 // ===== UTILITY FUNCTIONS =====
@@ -131,14 +163,12 @@ export const getAllCategoriesAPI = async () => {
     const [expenseCategoriesResponse, incomeCategoriesResponse] = await Promise.all([
       getCategoriesAPI('expense'),
       getCategoriesAPI('income')
-    ]);
-    
-    return {
+    ]);    return {
       message: 'Categories fetched successfully',
       data: {
-        expenseCategories: expenseCategoriesResponse.data || [],
-        incomeCategories: incomeCategoriesResponse.data || [],
-        total: (expenseCategoriesResponse.data?.length || 0) + (incomeCategoriesResponse.data?.length || 0)
+        expenseCategories: expenseCategoriesResponse || [],
+        incomeCategories: incomeCategoriesResponse || [],
+        total: (expenseCategoriesResponse?.length || 0) + (incomeCategoriesResponse?.length || 0)
       }
     };
   } catch (error) {
