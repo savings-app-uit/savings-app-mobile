@@ -9,23 +9,12 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-
-const iconList = [
-  "restaurant-outline",
-  "car-outline",
-  "cart-outline",
-  "game-controller-outline",
-  "document-text-outline",
-  "heart-outline",
-  "home-outline",
-  "cash-outline",
-  "bicycle-outline",
-];
+import { iconList } from "../component/data"; // Bạn cần tạo file này chứa iconList
 
 type AddCategoryModalProps = {
   visible: boolean;
   onClose: () => void;
-  onSave: (category: { name: string; icon: string }) => void;
+  onSave: (category: { name: string; icon: string; color: string }) => void;
 };
 
 export default function AddCategoryModal({ visible, onClose, onSave }: AddCategoryModalProps) {
@@ -34,7 +23,7 @@ export default function AddCategoryModal({ visible, onClose, onSave }: AddCatego
 
   const handleSave = () => {
     if (!name.trim()) return;
-    onSave({ name: name.trim(), icon: selectedIcon });
+    onSave({ name: name.trim(), icon: selectedIcon.icon, color: selectedIcon.color });
     setName("");
     setSelectedIcon(iconList[0]);
     onClose();
@@ -51,25 +40,31 @@ export default function AddCategoryModal({ visible, onClose, onSave }: AddCatego
             value={name}
             onChangeText={setName}
             style={styles.input}
+            placeholderTextColor="#999"
           />
 
           <Text style={styles.label}>Chọn biểu tượng</Text>
           <FlatList
             data={iconList}
-            keyExtractor={(item) => item}
+            keyExtractor={(item, index) => index.toString()}
             numColumns={4}
+            scrollEnabled={true}
             renderItem={({ item }) => (
               <TouchableOpacity
                 style={[
                   styles.iconBox,
-                  item === selectedIcon && styles.selectedIconBox,
+                  selectedIcon.icon === item.icon && {
+                    backgroundColor: item.color + 22,
+                    borderWidth: 2,
+                    borderColor: item.color,
+                  },
                 ]}
                 onPress={() => setSelectedIcon(item)}
               >
                 <Ionicons
-                  name={item as any}
+                  name={item.icon as any}
                   size={28}
-                  color={item === selectedIcon ? "#fff" : "#333"}
+                  color={item.color}
                 />
               </TouchableOpacity>
             )}
@@ -77,7 +72,7 @@ export default function AddCategoryModal({ visible, onClose, onSave }: AddCatego
 
           <View style={styles.buttons}>
             <TouchableOpacity style={styles.cancelBtn} onPress={onClose}>
-              <Text style={styles.btnText}>Hủy</Text>
+              <Text style={{ color: "#555" }}>Hủy</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.saveBtn} onPress={handleSave}>
               <Text style={styles.btnText}>Lưu</Text>
@@ -101,6 +96,7 @@ const styles = StyleSheet.create({
     padding: 20,
     width: "90%",
     borderRadius: 12,
+    maxHeight: "90%",
   },
   title: {
     fontSize: 18,
@@ -117,18 +113,15 @@ const styles = StyleSheet.create({
   label: {
     fontWeight: "bold",
     marginBottom: 8,
+    color: "#333",
   },
   iconBox: {
     width: 60,
     height: 60,
     borderRadius: 12,
-    backgroundColor: "#eee",
     margin: 6,
     justifyContent: "center",
     alignItems: "center",
-  },
-  selectedIconBox: {
-    backgroundColor: "#DD5E89",
   },
   buttons: {
     flexDirection: "row",
@@ -137,6 +130,8 @@ const styles = StyleSheet.create({
   },
   cancelBtn: {
     marginRight: 12,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
   },
   saveBtn: {
     backgroundColor: "#DD5E89",

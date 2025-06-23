@@ -1,24 +1,255 @@
-import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import React, { useState } from 'react';
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  ScrollView,
+  Keyboard,
+  Platform,
+} from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import DateTimePicker from '@react-native-community/datetimepicker';
+import CategoryPicker from '../CategoryPicker';
+import { exCategories, inCategories } from '../data';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
+import { LinearGradient } from 'expo-linear-gradient';
+import AddCategoryModal from '../AddCategoryModal';
 
-export default function ManualEntry() {
+
+export default function ManualTransactionForm() {
+  const [activeTab, setActiveTab] = useState<'expense' | 'income'>('expense');
+  const [amount, setAmount] = useState('');
+  const [date, setDate] = useState(new Date());
+  const [category, setCategory] = useState('');
+  const [note, setNote] = useState('');
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [showCategoryModal, setShowCategoryModal] = useState(false);
+  const [showAddCategoryModal, setShowAddCategoryModal] = useState(false);
+  const [exCategoryList, setExCategoryList] = useState(exCategories);
+  const [inCategoryList, setInCategoryList] = useState(inCategories);
+
+  const formatDate = (d: Date) => {
+    return `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth() + 1).toString().padStart(2, '0')}/${d.getFullYear()}`;
+  };
+
   return (
-    <View style={styles.container}>
-      <Text style={styles.text}>Ghi chép Giao dịch</Text>
-    </View>
+    <KeyboardAwareScrollView
+      enableOnAndroid
+      keyboardShouldPersistTaps="handled"
+      extraScrollHeight={100}
+      contentContainerStyle={{ flexGrow: 1, backgroundColor: '#fff' }}
+    >
+      <View style={{ flex: 1, backgroundColor: '#fff' }}>
+        {/* Tabs */}
+        <View style={styles.tabContainer}>
+          <TouchableOpacity onPress={() => setActiveTab('expense')} style={styles.tab}>
+            <Text style={[styles.tabText, activeTab === 'expense' && styles.activeTabText]}>
+              Chi tiêu
+            </Text>
+            {activeTab === 'expense' && <View style={styles.tabIndicator} />}
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => setActiveTab('income')} style={styles.tab}>
+            <Text style={[styles.tabText, activeTab === 'income' && styles.activeTabText]}>
+              Thu nhập
+            </Text>
+            {activeTab === 'income' && <View style={styles.tabIndicator} />}
+          </TouchableOpacity>
+        </View>
+
+        <View style={{ padding: 16 }} >
+          <View style={styles.card}>
+            {/* Loại */}
+            <Text style={styles.sectionLabel}>
+              {activeTab === 'expense' ? 'Chi tiêu' : 'Thu nhập'}
+            </Text>
+
+            {/* Số tiền */}
+            <TextInput
+              placeholder="0đ"
+              value={amount}
+              onChangeText={setAmount}
+              keyboardType="numeric"
+              placeholderTextColor="#666"
+              style={styles.amountInput}
+            />
+
+            {/* Danh mục */}
+            <Text style={styles.label}>Danh mục</Text>
+            <TouchableOpacity onPress={() => setShowCategoryModal(true)} style={styles.input}>
+              <Text style={{ color: category ? '#000' : '#aaa' }}>
+                {category || 'Chọn danh mục'}
+              </Text>
+            </TouchableOpacity>
+
+            <CategoryPicker
+              visible={showCategoryModal}
+              onClose={() => setShowCategoryModal(false)}
+              onSelect={(selectedCategory) => {
+                setCategory(selectedCategory);
+              }}
+              categories={activeTab === 'expense' ? exCategoryList : inCategoryList}
+              onAddCategory={() => {
+                setShowCategoryModal(false);
+                setShowAddCategoryModal(true);
+              }}
+              />
+           {showAddCategoryModal && (
+  <AddCategoryModal
+    visible={showAddCategoryModal}
+    onClose={() => setShowAddCategoryModal(false)}
+    onSave={(newCategory) => {
+      if (activeTab === 'expense') {
+        setExCategoryList((prev) => [...prev, newCategory]);
+      } else {
+        setInCategoryList((prev) => [...prev, newCategory]);
+      }
+    }}
+  />
+)}
+
+            {/* Ngày */}
+            <Text style={styles.label}>Ngày giao dịch</Text>
+            <TouchableOpacity style={styles.input} onPress={() => setShowDatePicker(true)}>
+              <Text>{formatDate(date)}</Text>
+            </TouchableOpacity>
+
+            {showDatePicker && (
+              <DateTimePicker
+                value={date}
+                mode="date"
+                display="default"
+                onChange={(e, selected) => {
+                  setShowDatePicker(false);
+                  if (selected) setDate(selected);
+                }}
+              />
+            )}
+
+            {/* Ghi chú */}
+            <Text style={styles.label}>Ghi chú</Text>
+            <TextInput
+              placeholder="Nhập mô tả giao dịch"
+              value={note}
+              onChangeText={setNote}
+              placeholderTextColor="#666"
+              returnKeyType="done"
+              onSubmitEditing={() => Keyboard.dismiss()}
+              style={styles.noteInput}
+            />
+          </View>
+        </View>
+
+        {/* Nút thêm giao dịch */}
+        <TouchableOpacity>
+          <LinearGradient 
+            start={{x: 0, y: 0}} 
+            end={{x: 1, y: 0}} 
+            colors={['#DD5E89', '#EB8E90', '#F7BB97']} 
+            style={[styles.linearGradient, {marginTop: 60, alignSelf: 'center', width: '80%', height: 50}]}>
+          
+              <Text style={styles.submitText}>
+                Thêm giao dịch
+              </Text>
+           </LinearGradient>
+        </TouchableOpacity>
+      </View>
+    </KeyboardAwareScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
+  tabContainer: {
+    flexDirection: 'row',
     justifyContent: 'center',
+    borderBottomWidth: 1,
+    borderColor: '#eee',
+  },
+  tab: {
+    paddingVertical: 12,
+    paddingHorizontal: 20,
     alignItems: 'center',
-    backgroundColor: '#f3f2f8',
   },
-  text: {
-    fontSize: 18,
-    color: '#2c3e50',
-    fontWeight: '600',
+  tabText: {
+    fontSize: 14,
+    color: '#999',
   },
+  activeTabText: {
+    color: '#d63384',
+    fontWeight: 'bold',
+  },
+  tabIndicator: {
+    marginTop: 4,
+    height: 2,
+    backgroundColor: '#d63384',
+    width: '100%',
+  },
+  card: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 16,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  sectionLabel: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#d63384',
+    marginBottom: 8,
+  },
+  amountInput: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    borderBottomWidth: 1,
+    borderColor: '#eee',
+    paddingVertical: 8,
+    marginBottom: 16,
+  },
+  label: {
+    marginTop: 16,
+    marginBottom: 4,
+    color: '#666',
+    fontSize: 12,
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: '#ccc',
+    padding: 14,
+    borderRadius: 8,
+    marginBottom: 12,
+  },
+  noteInput: {
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
+    padding: 8,
+    marginTop: 8,
+    textAlignVertical: 'top',
+    minHeight: 60,
+  },
+  submitButton: {
+    height: 50,
+    backgroundColor: '#DD5E89',
+    padding: 16,
+    marginBottom: 52,
+    marginHorizontal: 16,
+    alignItems: 'center',
+    borderRadius: 16,
+  },
+  submitText: {
+    color: 'white',
+    fontWeight: 'bold',
+  },
+  linearGradient: {
+    height: 50,
+    backgroundColor: '#DD5E89',
+    padding: 16,
+    marginBottom: 52,
+    marginHorizontal: 8,
+    alignItems: 'center',
+    borderRadius: 20,
+    },
 });

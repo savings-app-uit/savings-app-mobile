@@ -1,18 +1,18 @@
-import { Ionicons } from "@expo/vector-icons";
-import MaskedView from "@react-native-masked-view/masked-view";
-import { LinearGradient } from "expo-linear-gradient";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
-  Dimensions,
-  ScrollView,
-  StyleSheet,
+  View,
   Text,
-  TouchableOpacity,
-  View
+  StyleSheet,
+  ScrollView,
+  Dimensions,
+  TouchableOpacity
 } from "react-native";
-import MonthlyBarChart from "../component/BarChart";
+import { Ionicons } from "@expo/vector-icons";
 import { allCategories } from "../component/data";
+import { LinearGradient } from "expo-linear-gradient";
+import MaskedView from "@react-native-masked-view/masked-view";
 import MonthlySummary from "../component/PieChart";
+import MonthlyBarChart from "../component/BarChart";
 
 const screenWidth = Dimensions.get("window").width;
 const User = {
@@ -25,6 +25,8 @@ export default function OverviewScreen() {
   const [otherItemsDetail, setOtherItemsDetail] = useState<any[]>([]);
   const [selectedCategoryName, setSelectedCategoryName] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<"pie" | "bar">("pie");
+  const [activeTab, setActiveTab] = useState<"expense" | "income">("expense");
+
 
   const filteredChart = chartWithPercent.filter(item => item.name !== "Còn lại");
 
@@ -41,7 +43,7 @@ export default function OverviewScreen() {
               alignItems: "center",
             }}
           >
-            <Text style={styles.headerText}>Hi</Text>
+            <Text style={styles.headerText}>Xin chào</Text>
             <MaskedView
               maskElement={<Text style={styles.gradientText}>{User.name}</Text>}
             >
@@ -74,7 +76,7 @@ export default function OverviewScreen() {
           </MaskedView>
         </View>
         <View style={{display: 'flex', flexDirection: 'row', justifyContent: 'space-between', alignItems:'center'}}>
-          <Text style={styles.sectionTitle}>Overview</Text>
+          <Text style={styles.sectionTitle}>Tổng quan</Text>
           <View style={{ flexDirection: "row", alignSelf: "center", borderRadius: 16, backgroundColor: "#f8f8f8", overflow: "hidden", marginBottom: 8, marginRight: 16 }}>
             <TouchableOpacity onPress={() => setViewMode("pie")} style={{ padding: 10, backgroundColor: viewMode === "pie" ? "#DD5E8922" : "transparent", flexDirection: "row", alignItems: "center" }}>
               <Ionicons name="pie-chart" size={16} color={viewMode === "pie" ? "#DD5E89" : "#aaa"} />
@@ -97,6 +99,8 @@ export default function OverviewScreen() {
                 setOtherItemsDetail(otherItemsDetail);
               }}
               onSelectCategory={(name) => setSelectedCategoryName(name)}
+              activeTab={activeTab}
+              setActiveTab={setActiveTab}
             />
           ) : (
             <MonthlyBarChart
@@ -106,15 +110,17 @@ export default function OverviewScreen() {
                 setChartWithPercent(chartWithPercent);
                 setOtherItemsDetail(otherItemsDetail);
               }}
+              activeTab={activeTab}
+              setActiveTab={setActiveTab}
             />
           )}
         </View>
 
-        <Text style={styles.sectionTitle}>Details</Text>
+        <Text style={styles.sectionTitle}>Chi tiết giao dịch</Text>
         <View style={styles.list}>
           {filteredChart.length === 0 && otherItemsDetail.length === 0 ? (
             <Text style={{ textAlign: "center", color: "gray", marginTop: 32 }}>
-              No expense in this month
+              Không có giao dịch trong tháng này
             </Text>
           ) : (
             <>

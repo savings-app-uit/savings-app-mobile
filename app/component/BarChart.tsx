@@ -1,15 +1,17 @@
 import { Ionicons } from "@expo/vector-icons";
 import React, { useEffect, useState } from "react";
 import {
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { BarChart } from "react-native-gifted-charts";
-import { allCategories, transactions } from "./data";
+import { allCategories, transactions, income } from "./data";
 
 type MonthlyBarChartProps = {
+  activeTab: "expense" | "income";
+  setActiveTab: (tab: "expense" | "income") => void;
   currentMonth: string;
   setCurrentMonth: (month: string) => void;
   onDataChange?: (data: {
@@ -32,10 +34,12 @@ export default function MonthlyBarChart({
   onDataChange,
   currentMonth,
   setCurrentMonth,
+  activeTab,
+  setActiveTab
 }: MonthlyBarChartProps) {
   const [chartData, setChartData] = useState<any[]>([]);
   const [maxValue, setMaxValue] = useState(7.5);
-  const [totalExpense, setTotalExpense] = useState(0);
+  const [totalAmount, setTotalAmount] = useState(0);
 
   const monthLabels = Array.from({ length: 12 }, (_, i) => {
     const date = new Date();
@@ -54,56 +58,54 @@ export default function MonthlyBarChart({
     return date.toISOString().slice(0, 7);
   }
 
+  const sourceData = activeTab === 'expense' ? transactions : income;
+
   useEffect(() => {
-    // Lấy 3 tháng: trước, hiện tại, sau
     const prevMonth = currentIndex > 0 ? monthLabels[currentIndex - 1] : null;
     const thisMonth = monthLabels[currentIndex];
     const nextMonth = currentIndex < monthLabels.length - 1 ? monthLabels[currentIndex + 1] : null;
 
     const visibleMonths = [prevMonth, thisMonth, nextMonth].filter(Boolean);
 
-    const data = visibleMonths.map((month, index) => {
-      const sum = transactions
+    const data = visibleMonths.map((month) => {
+      const sum = sourceData
         .filter((tx) => tx.date.startsWith(month!.key))
         .reduce((acc, tx) => acc + tx.amount, 1);
-      
+
       const valueInMil = Number((sum / 1_000_000).toFixed(1));
-      
-      // Xác định màu sắc dựa trên vị trí
-      let frontColor = "#B8D4F0"; // Light blue mặc định
+      let frontColor = "#B8D4F0";
       if (month!.key === currentMonth) {
-        frontColor = "#2196F3"; // Dark blue cho tháng hiện tại
+        frontColor = "#2196F3";
       }
 
       return {
         label: month!.label,
         value: valueInMil,
-        frontColor: frontColor,
+        frontColor,
       };
     });
 
     setChartData(data);
 
-    // Tính tổng chi tiêu tháng hiện tại
-    const thisMonthTotal = transactions
+    const currentMonthTotal = sourceData
       .filter((tx) => tx.date.startsWith(currentMonth))
       .reduce((sum, tx) => sum + tx.amount, 0);
-    setTotalExpense(thisMonthTotal);
+    setTotalAmount(currentMonthTotal);
 
-    // Tính max value cho chart với số thập phân đẹp
-    const maxDataValue = Math.max(...data.map(d => d.value));
-    
-    // Tính toán để có step 0.5 rõ ràng
-    let calculatedMax = Math.ceil(maxDataValue * 2) / 2; // làm tròn đến 0.5
-    calculatedMax = calculatedMax + 0.5; // thêm 1 step để có khoảng trống
-    
-    // Đảm bảo maxValue tối thiểu
-    if (calculatedMax < 1.5) calculatedMax = 1.5;
-    
-    setMaxValue(calculatedMax);
+    const maxDataValue = Math.max(...data.map((d) => d.value));
+    const MAX_SECTIONS = 5;
+    const sectionStep = Math.ceil((maxDataValue / MAX_SECTIONS) * 2) / 2;
+    const noOfSections = Math.min(MAX_SECTIONS, Math.ceil(maxDataValue / sectionStep));
+    const yAxisLabels = Array.from({ length: noOfSections + 1 }, (_, i) =>
+      `${(i * sectionStep).toLocaleString("vi-VN", {
+        minimumFractionDigits: 1,
+        maximumFractionDigits: 1,
+      })}`
+    );
 
-    // Xử lý dữ liệu pie chart (giữ nguyên logic cũ)
-    const pieData = transactions
+    setMaxValue(sectionStep * noOfSections);
+
+    const pieData = sourceData
       .filter((tx) => tx.date.startsWith(currentMonth))
       .reduce((acc, tx) => {
         const existing = acc.find((item) => item.name === tx.category);
@@ -124,7 +126,7 @@ export default function MonthlyBarChart({
       return {
         name: item.name,
         amount: item.amount,
-        percent: ((item.amount / thisMonthTotal) * 100).toFixed(0),
+        percent: ((item.amount / currentMonthTotal) * 100).toFixed(0),
         icon: cat?.icon,
         color: cat?.color ?? "#ccc",
       };
@@ -135,7 +137,7 @@ export default function MonthlyBarChart({
       chartWithPercent,
       otherItemsDetail: other,
     });
-  }, [currentMonth]);
+  }, [currentMonth, activeTab]);
 
   const displayMonth = new Date(currentMonth + "-01");
 
@@ -149,18 +151,38 @@ export default function MonthlyBarChart({
           <Ionicons name="chevron-back" size={20} color="#333" />
         </TouchableOpacity>
 
-        <View style={{ alignItems: "center", gap: 4 }}>
+        <View style={{ alignItems: "center", }}>
           <Text style={styles.monthText}>
-            {displayMonth.toLocaleDateString("en-US", {
-              year: "numeric",
-              month: "long",
-            })}
+            {`Tháng ${displayMonth.getMonth() + 1}/${displayMonth.getFullYear()}`}
           </Text>
-          <Text style={styles.subText}>Total expense</Text>
+
+          <View style={{ flexDirection: "row", marginTop: 8, gap: 16, }}>
+            {["expense", "income"].map((type) => (
+              <TouchableOpacity
+                key={type}
+                onPress={() => setActiveTab(type as 'expense' | 'income')}
+                style={{
+                  paddingVertical: 6,
+                  paddingHorizontal: 16,
+                  borderRadius: 20,
+                  backgroundColor: activeTab === type ? "#EB8E90" : "#eee",
+                }}
+              >
+                <Text
+                  style={{
+                    color: activeTab === type ? "white" : "#333",
+                    fontWeight: "bold",
+                    fontSize: 12,
+                  }}
+                >
+                  {type === "expense" ? "Tổng chi" : "Tổng thu"}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+
           <Text style={styles.amountText}>
-            {(totalExpense).toLocaleString("vi-VN", {
-              maximumFractionDigits: 1,
-            })}đ
+            {totalAmount.toLocaleString("vi-VN")}đ
           </Text>
         </View>
 
@@ -180,25 +202,19 @@ export default function MonthlyBarChart({
           barWidth={80}
           spacing={20}
           maxValue={maxValue}
-          stepValue={0.5}
-          noOfSections={Math.ceil(maxValue / 0.5)}
-          yAxisThickness={0}
-          yAxisLabelTexts={Array.from({ length: Math.ceil(maxValue / 0.5) + 1 }, (_, i) => 
-            `${(i * 0.5).toLocaleString("vi-VN", {
-            minimumFractionDigits: 1,
-            maximumFractionDigits: 1,
+          stepValue={maxValue / Math.min(5, Math.ceil(maxValue / 0.5))}
+          noOfSections={Math.min(5, Math.ceil(maxValue / 0.5))}
+          yAxisLabelTexts={Array.from({ length: Math.min(5, Math.ceil(maxValue / 0.5)) + 1 }, (_, i) =>
+            `${(i * (maxValue / Math.min(5, Math.ceil(maxValue / 0.5)))).toLocaleString("vi-VN", {
+              minimumFractionDigits: 1,
+              maximumFractionDigits: 1,
             })}`
-            )}
+          )}
+          yAxisThickness={0}
           xAxisThickness={0}
           hideRules={false}
-          yAxisTextStyle={{ 
-            fontSize: 12, 
-            color: '#666' 
-          }}
-          xAxisLabelTextStyle={{ 
-            fontSize: 12, 
-            color: '#666' 
-          }}
+          yAxisTextStyle={{ fontSize: 12, color: "#666" }}
+          xAxisLabelTextStyle={{ fontSize: 12, color: "#666" }}
           barBorderRadius={4}
           showReferenceLine1={false}
           backgroundColor="transparent"
@@ -214,7 +230,7 @@ const styles = StyleSheet.create({
     padding: 16,
     borderRadius: 20,
     margin: 16,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: {
       width: 0,
       height: 2,
@@ -234,15 +250,11 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     color: "#000",
   },
-  subText: {
-    fontSize: 12,
-    color: "gray",
-  },
   amountText: {
     fontSize: 14,
     fontWeight: "bold",
     color: "#000",
-    marginTop: 4,
+    marginTop: 8,
   },
   chartContainer: {
     alignItems: "center",

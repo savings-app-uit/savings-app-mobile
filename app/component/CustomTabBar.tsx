@@ -1,11 +1,16 @@
 import { Ionicons } from "@expo/vector-icons";
 import { BottomTabBarProps } from "@react-navigation/bottom-tabs";
-import { useRouter } from "expo-router";
+import { usePathname, useRouter } from "expo-router";
 import React from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 export default function CustomTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
   const router = useRouter();
+  const pathname = usePathname(); // ✅ thêm dòng này
+
+  if (pathname === "/add") {
+    return null;
+  }
 
   return (
     <View style={styles.tabBar}>
