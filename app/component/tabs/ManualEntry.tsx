@@ -1,4 +1,4 @@
-import { addCategoryAPI, getCategoriesAPI } from '@/utils/api';
+import { addCategoryAPI, addExpenseAPI, addIncomeAPI, getCategoriesAPI } from '@/utils/api';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { LinearGradient } from 'expo-linear-gradient';
 import React, { useEffect, useState } from 'react';
@@ -30,13 +30,11 @@ export default function ManualTransactionForm() {
   const [inCategoryList, setInCategoryList] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
 
-  // Load categories from API
   useEffect(() => {
     loadCategories();
   }, []);
   useEffect(() => {
     loadCategories();
-    // Reset category when switching tabs
     setCategory('');
     setCategoryId('');
   }, [activeTab]);  const loadCategories = async () => {
@@ -47,12 +45,11 @@ export default function ManualTransactionForm() {
       console.log('API Response:', response);
       
       if (response && Array.isArray(response)) {
-        // API trả về trực tiếp array của categories (đã unwrap bởi interceptor)
         const mappedCategories = response.map((cat: ICategory) => ({
           id: cat.id,
           name: cat.name,
-          icon: cat.icon.icon, // API trả về cat.icon.icon
-          color: cat.icon.color, // API trả về cat.icon.color
+          icon: cat.icon.icon, 
+          color: cat.icon.color, 
         }));
 
         console.log('Mapped categories:', mappedCategories);
@@ -72,9 +69,53 @@ export default function ManualTransactionForm() {
       setLoading(false);
     }
   };
-
   const formatDate = (d: Date) => {
     return `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth() + 1).toString().padStart(2, '0')}/${d.getFullYear()}`;
+  };
+
+  const handleAddTransaction = async () => {
+    if (!amount.trim() || parseFloat(amount) <= 0) {
+      Alert.alert('Lỗi', 'Vui lòng nhập số tiền hợp lệ');
+      return;
+    }
+    
+    if (!categoryId) {
+      Alert.alert('Lỗi', 'Vui lòng chọn danh mục');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      
+      const transactionData = {
+        categoryId: categoryId,
+        amount: parseFloat(amount),
+        description: note.trim() || '', 
+        date: date.toISOString() 
+      };
+
+      console.log('Adding transaction:', transactionData);
+
+      if (activeTab === 'expense') {
+        await addExpenseAPI(transactionData);
+      } else {
+        await addIncomeAPI(transactionData);
+      }
+
+      Alert.alert('Thành công', `Đã thêm ${activeTab === 'expense' ? 'chi tiêu' : 'thu nhập'} thành công`);
+      
+      setAmount('');
+      setCategory('');
+      setCategoryId('');
+      setNote('');
+      setDate(new Date());
+
+    } catch (error) {
+      console.error('Error adding transaction:', error);
+      Alert.alert('Lỗi', `Không thể thêm ${activeTab === 'expense' ? 'chi tiêu' : 'thu nhập'}`);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -114,7 +155,8 @@ export default function ManualTransactionForm() {
               value={amount}
               onChangeText={setAmount}
               keyboardType="numeric"
-              placeholderTextColor="#666"              style={styles.amountInput}
+              placeholderTextColor="#666"              
+              style={styles.amountInput}
             />
             
             {/* Danh mục */}
@@ -123,9 +165,10 @@ export default function ManualTransactionForm() {
               onPress={() => setShowCategoryModal(true)} 
               style={styles.input}
               disabled={loading}
-            >
+            >              
               <Text style={{ color: category ? '#000' : '#aaa' }}>
-                {loading ? 'Đang tải...' : (category || 'Chọn danh mục')}              </Text>
+                {loading ? 'Đang tải...' : (category || 'Chọn danh mục')}
+              </Text>
             </TouchableOpacity>
             
             <CategoryPicker
@@ -142,28 +185,27 @@ export default function ManualTransactionForm() {
               }}
               />
               
-{showAddCategoryModal && (
-  <AddCategoryModal
-    visible={showAddCategoryModal}
-    onClose={() => setShowAddCategoryModal(false)}    onSave={async (newCategory: any) => {
-      try {
-        // Call API to add new category
-        await addCategoryAPI({
-          name: newCategory.name,
-          iconId: newCategory.icon, // icon từ AddCategoryModal
-          type: activeTab
-        });        
-        // Reload categories from server after adding new category
-        await loadCategories();
-        
-        Alert.alert('Thành công', 'Đã thêm danh mục mới');
-      } catch (error) {
-        console.error('Error adding category:', error);
-        Alert.alert('Lỗi', 'Không thể thêm danh mục mới');
-      }
-    }}
-  />
-)}
+            {showAddCategoryModal && (
+              <AddCategoryModal
+                visible={showAddCategoryModal}
+                onClose={() => setShowAddCategoryModal(false)}    
+                onSave={async (newCategory: any) => {
+                  try {
+                    await addCategoryAPI({
+                      name: newCategory.name,
+                      iconId: newCategory.icon,
+                      type: activeTab
+                    });        
+                    await loadCategories();
+                    
+                    Alert.alert('Thành công', 'Đã thêm danh mục mới');
+                  } catch (error) {
+                    console.error('Error adding category:', error);
+                    Alert.alert('Lỗi', 'Không thể thêm danh mục mới');
+                  }
+                }}
+              />
+            )}
 
             {/* Ngày */}
             <Text style={styles.label}>Ngày giao dịch</Text>
@@ -195,18 +237,18 @@ export default function ManualTransactionForm() {
               style={styles.noteInput}
             />
           </View>
-        </View>
+        </View>        
 
         {/* Nút thêm giao dịch */}
-        <TouchableOpacity>
+        <TouchableOpacity onPress={handleAddTransaction} disabled={loading}>
           <LinearGradient 
             start={{x: 0, y: 0}} 
             end={{x: 1, y: 0}} 
-            colors={['#DD5E89', '#EB8E90', '#F7BB97']} 
+            colors={loading ? ['#ccc', '#ccc', '#ccc'] : ['#DD5E89', '#EB8E90', '#F7BB97']} 
             style={[styles.linearGradient, {marginTop: 60, alignSelf: 'center', width: '80%', height: 50}]}>
           
               <Text style={styles.submitText}>
-                Thêm giao dịch
+                {loading ? 'Đang xử lý...' : 'Thêm giao dịch'}
               </Text>
            </LinearGradient>
         </TouchableOpacity>

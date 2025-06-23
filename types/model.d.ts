@@ -124,8 +124,7 @@ declare global {
         data?: ICategory[];
     }
 
-    // Interface cho response trực tiếp từ API (array)
-    interface ICategoriesArrayResponse extends Array<ICategory> {}// ===== PROFILE INTERFACES =====
+    interface ICategoriesArrayResponse extends Array<ICategory> {}
 
     interface IProfile {
         id: string;
@@ -151,7 +150,7 @@ declare global {
     interface IChangePasswordRequest {
         oldPassword: string;
         newPassword: string;
-    }    // ===== ICON INTERFACES =====
+    }    
     
     interface IIcon {
         id: string;
