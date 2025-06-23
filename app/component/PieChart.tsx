@@ -2,12 +2,14 @@ import { Ionicons } from "@expo/vector-icons";
 import React, { useEffect, useState } from "react";
 import { Dimensions, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { PieChart } from "react-native-gifted-charts";
-import { allCategories, transactions } from "./data";
+import { allCategories, transactions, income } from "./data";
 
 const screenWidth = Dimensions.get("window").width;
 
 type MonthlySummaryProps = {
-    currentMonth:string;
+  activeTab: "expense" | "income";
+  setActiveTab: (tab: "expense" | "income") => void;
+  currentMonth: string;
   onDataChange?: (data: {
     currentMonth: string;
     chartWithPercent: {
@@ -21,32 +23,32 @@ type MonthlySummaryProps = {
       name: string;
       amount: number;
     }[];
-    
   }) => void;
   setCurrentMonth: (month: string) => void;
   onSelectCategory?: (name: string) => void;
 };
+export default function MonthlySummary({
+  onDataChange,
+  onSelectCategory,
+  currentMonth,
+  setCurrentMonth,
+  activeTab,
+  setActiveTab
+}: MonthlySummaryProps) {
+  const [selectedSlice, setSelectedSlice] = useState<string | null>(null);
 
-export default function MonthlySummary({ onDataChange, onSelectCategory, currentMonth, setCurrentMonth}: MonthlySummaryProps) {
-    const [selectedSlice, setSelectedSlice] = useState<string | null>(null);
-  const filteredTransactions = transactions.filter((tx) =>
-    tx.date.startsWith(currentMonth)
-  );
   const getMonthOffset = (offset: number) => {
     const date = new Date(currentMonth + "-01");
     date.setMonth(date.getMonth() + offset);
     return date.toISOString().slice(0, 7);
   };
 
-  const monthLabels = [-2, -1, 0].map(offset => {
-    const date = new Date(getMonthOffset(offset) + "-01");
-    return {
-      label: offset === 0 ? "Tháng này" : `T${date.getMonth() + 1}`,
-      key: getMonthOffset(offset),
-    };
-  });
-  
-  const totalExpense = filteredTransactions.reduce(
+  const dataSource = activeTab === "expense" ? transactions : income;
+  const filteredTransactions = dataSource.filter((tx) =>
+    tx.date.startsWith(currentMonth)
+  );
+
+  const totalAmount = filteredTransactions.reduce(
     (sum, tx) => sum + tx.amount,
     0
   );
@@ -68,7 +70,7 @@ export default function MonthlySummary({ onDataChange, onSelectCategory, current
 
   const chartWithPercent = topItems.map((item) => {
     const cat = allCategories.find((c) => c.name === item.name);
-    const percent = ((item.amount / totalExpense) * 100).toFixed(0);
+    const percent = ((item.amount / totalAmount) * 100).toFixed(0);
     return {
       name: item.name,
       amount: item.amount,
@@ -80,7 +82,7 @@ export default function MonthlySummary({ onDataChange, onSelectCategory, current
 
   if (otherItems.length > 0) {
     const otherAmount = otherItems.reduce((sum, item) => sum + item.amount, 0);
-    const otherPercent = ((otherAmount / totalExpense) * 100).toFixed(0);
+    const otherPercent = ((otherAmount / totalAmount) * 100).toFixed(0);
     chartWithPercent.push({
       name: "Còn lại",
       amount: otherAmount,
@@ -91,16 +93,14 @@ export default function MonthlySummary({ onDataChange, onSelectCategory, current
   }
 
   const giftedPieData = chartWithPercent.map((item) => ({
-  value: item.amount,
-  color: item.color + 50, // slice được chọn to hơn
-  onPress: () => {
-    setSelectedSlice(item.name);
-    onSelectCategory?.(item.name);
-  },
-  ...(selectedSlice === item.name
-    ? { color: item.color,} 
-    : {}),
-}));
+    value: item.amount,
+    color: item.color + 50,
+    onPress: () => {
+      setSelectedSlice(item.name);
+      onSelectCategory?.(item.name);
+    },
+    ...(selectedSlice === item.name ? { color: item.color } : {}),
+  }));
 
   const displayDate = new Date(currentMonth + "-01");
 
@@ -112,39 +112,73 @@ export default function MonthlySummary({ onDataChange, onSelectCategory, current
         otherItemsDetail: otherItems,
       });
     }
-  }, [currentMonth]);
+  }, [currentMonth, activeTab]);
+  const displayMonth = new Date(currentMonth + "-01");
 
   return (
     <View style={styles.wrapper}>
       <View style={styles.header}>
-              <TouchableOpacity onPress={() => setCurrentMonth(getMonthOffset(-1))}>
-                <Ionicons name="chevron-back" size={20} />
-              </TouchableOpacity>
-      
-              <View style={{ alignItems: "center" }}>
-                <Text style={styles.monthText}>
-                  {new Date(currentMonth + "-01").toLocaleDateString("en-US", {
-                    year: "numeric",
-                    month: "long",
-                  })}
-                </Text>
-                <Text style={styles.subText}>Total expense</Text>
-                <Text style={styles.amountText}>{(totalExpense).toLocaleString("vi-VN")}đ</Text>
-              </View>
-      
-              <TouchableOpacity onPress={() => setCurrentMonth(getMonthOffset(1))}>
-                <Ionicons name="chevron-forward" size={20} />
-              </TouchableOpacity>
-            </View>
+        <TouchableOpacity onPress={() => setCurrentMonth(getMonthOffset(-1))}>
+          <Ionicons name="chevron-back" size={20} />
+        </TouchableOpacity>
+
+        <View style={{ alignItems: "center" }}>
+          <Text style={styles.monthText}>
+            {`Tháng ${displayMonth.getMonth() + 1}/${displayMonth.getFullYear()}`}
+          </Text>
+          {/* Toggle Thu / Chi */}
+<View
+  style={{
+    marginTop: 8,
+    flexDirection: "row",
+    justifyContent: "center",
+    gap: 16,
+  }}
+>
+  {["expense", "income"].map((type) => (
+    <TouchableOpacity
+      key={type}
+      onPress={() => setActiveTab(type as "expense" | "income")}
+      style={{
+        paddingVertical: 6,
+        paddingHorizontal: 16,
+        borderRadius: 20,
+        backgroundColor: activeTab === type ? "#EB8E90" : "#eee",
+      }}
+    >
+      <Text
+        style={{
+          color: activeTab === type ? "white" : "black",
+          fontWeight: "bold",
+          fontSize: 12,
+        }}
+      >
+        {type === "expense" ? "Tổng chi" : "Tổng thu"}
+      </Text>
+    </TouchableOpacity>
+  ))}
+</View>
+          
+          <Text style={styles.amountText}>
+            {totalAmount.toLocaleString("vi-VN")}đ
+          </Text>
+        </View>
+
+        <TouchableOpacity onPress={() => setCurrentMonth(getMonthOffset(1))}>
+          <Ionicons name="chevron-forward" size={20} />
+        </TouchableOpacity>
+      </View>
 
       {filteredTransactions.length === 0 ? (
         <View style={{ alignItems: "center", paddingVertical: 32 }}>
-          <Text style={{ color: "#888" }}>No expense in this month</Text>
+          <Text style={{ color: "#888" }}>
+            Không có giao dịch trong tháng này
+          </Text>
         </View>
       ) : (
         <View style={styles.chartRow}>
           <PieChart
-            key={currentMonth}
+            key={currentMonth + activeTab}
             data={giftedPieData}
             donut
             showText
@@ -153,7 +187,6 @@ export default function MonthlySummary({ onDataChange, onSelectCategory, current
             radius={80}
             strokeWidth={2}
             strokeColor="#fff"
-            
             centerLabelComponent={() => null}
           />
 
@@ -253,5 +286,19 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     marginBottom: 12,
+  },
+  tabWrapper: {
+    flexDirection: "row",
+    marginTop: 8,
+    gap: 8,
+  },
+  tab: {
+    backgroundColor: "#eee",
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 20,
+  },
+  activeTab: {
+    backgroundColor: "#ddd",
   },
 });

@@ -8,16 +8,23 @@ import {
 } from 'react-native';
 import ManualEntry from '../component/tabs/ManualEntry';
 import ReceiptScanner from '../component/tabs/ReceiptScanner';
+import { useRouter } from 'expo-router';
 
 export default function AddTransactionScreen() {
   const [activeTab, setActiveTab] = useState<'manual' | 'scan'>('manual');
+  const router = useRouter();
 
   return (
     <View style={styles.container}>
       {/* Header */}
+        
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Thêm Giao dịch</Text>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+          <Ionicons name="arrow-back" size={24} color="#333" />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Thêm giao dịch</Text>
       </View>
+      
 
       <View style={styles.tabSelectorContainer}>
         <View style={styles.tabSelector}>
@@ -83,11 +90,11 @@ const styles = StyleSheet.create({
     borderBottomColor: '#e9ecef',
   },
   headerTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    color: '#2c3e50',
-  },
+  fontSize: 20,
+  fontWeight: 'bold',
+  textAlign: 'center',
+  color: '#2c3e50',
+},
   tabSelectorContainer: {
     paddingHorizontal: 16,
     paddingVertical: 10,
@@ -113,4 +120,11 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
   },
+  backButton: {
+  position: 'absolute',
+  left: 16,
+  top: 50,
+  padding: 4,
+  zIndex: 10,
+},
 });

@@ -50,7 +50,7 @@ export default function Filter({
     <Modal visible={visible} animationType="slide" transparent>
       <View style={styles.overlay}>
         <View style={styles.modalContainer}>
-          <Text style={styles.title}>Filter by category</Text>
+          <Text style={styles.title}>Chọn danh mục</Text>
           <ScrollView contentContainerStyle={{ paddingBottom: 100 }}>
             <View style={styles.iconRow}>
               {categories.map((cat, idx) => {
@@ -90,10 +90,10 @@ export default function Filter({
           <TouchableOpacity style={styles.closeButton} onPress={onClose}>
             <Ionicons name="close" size={24} color="grey" />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.addButton} onPress={onAddCategory}>
+          {/* <TouchableOpacity style={styles.addButton} onPress={onAddCategory}>
             <Ionicons name="add" size={16} color="#fff" />
-            <Text style={{ fontSize: 12, color: "#fff" }}>Add category</Text>
-          </TouchableOpacity>
+            <Text style={{ fontSize: 12, color: "#fff" }}>Thêm danh mục</Text>
+          </TouchableOpacity> */}
         </View>
       </View>
     </Modal>
