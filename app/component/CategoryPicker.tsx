@@ -15,8 +15,16 @@ const screenHeight = Dimensions.get("window").height;
 interface Props {
   visible: boolean;
   onClose: () => void;
-  onSelect: (selected: string, selectedId?: string) => void;
-  categories: { id?: string; name: string; icon: string; color: string }[];
+  onSelect: (
+    selected: string, 
+    selectedId?: string
+  ) => void;
+  categories: { 
+    id?: string; 
+    name: string; 
+    icon: string; 
+    color: string 
+  }[];
   onAddCategory: () => void;
 }
 

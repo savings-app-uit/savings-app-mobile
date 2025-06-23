@@ -24,7 +24,6 @@ export default function AddCategoryModal({ visible, onClose, onSave }: AddCatego
   const [iconList, setIconList] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
 
-  // Load icons from API when modal opens
   useEffect(() => {
     if (visible) {
       loadIcons();
@@ -37,11 +36,9 @@ export default function AddCategoryModal({ visible, onClose, onSave }: AddCatego
       console.log('Icons API Response:', response);
       
       if (response && Array.isArray(response) && response.length > 0) {
-        // Response đã được unwrap bởi interceptor, response chính là array của icons
-        // Không cần map lại vì dữ liệu đã đúng format: { id, icon, color }
         console.log('Icons loaded:', response);
         setIconList(response);
-        setSelectedIcon(response[0]); // Select first icon by default
+        setSelectedIcon(response[0]); 
       } else {
         console.log('No icons data in response');
         throw new Error('No icons data');
@@ -49,7 +46,6 @@ export default function AddCategoryModal({ visible, onClose, onSave }: AddCatego
     } catch (error) {
       console.error('Error loading icons:', error);
       Alert.alert('Lỗi', 'Không thể tải danh sách biểu tượng');
-        // Fallback to default icons if API fails
       const defaultIcons = [
         { id: "restaurant", icon: "restaurant", color: "#FF6B6B" },
         { id: "car", icon: "car", color: "#4ECDC4" },
@@ -97,7 +93,8 @@ export default function AddCategoryModal({ visible, onClose, onSave }: AddCatego
             placeholder="Tên danh mục"
             value={name}
             onChangeText={setName}
-            style={styles.input}            placeholderTextColor="#999"
+            style={styles.input}            
+            placeholderTextColor="#999"
           />
           
           <Text style={styles.label}>Chọn biểu tượng</Text>
@@ -105,7 +102,8 @@ export default function AddCategoryModal({ visible, onClose, onSave }: AddCatego
             <View style={styles.loadingContainer}>
               <Text>Đang tải biểu tượng...</Text>
             </View>
-          ) : (            <FlatList
+          ) : (            
+          <FlatList
               data={iconList}
               keyExtractor={(item) => item.id}
               numColumns={4}
@@ -197,7 +195,8 @@ const styles = StyleSheet.create({
   saveBtn: {
     backgroundColor: "#DD5E89",
     paddingHorizontal: 16,
-    paddingVertical: 8,    borderRadius: 8,
+    paddingVertical: 8,    
+    borderRadius: 8,
   },
   
   btnText: {
