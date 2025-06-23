@@ -1,3 +1,4 @@
+import { getCategoriesAPI, getExpensesAPI, getIncomesAPI } from "@/utils/api";
 import { Ionicons } from "@expo/vector-icons";
 import React, { useEffect, useState } from "react";
 import {
@@ -7,7 +8,6 @@ import {
   View,
 } from "react-native";
 import { BarChart } from "react-native-gifted-charts";
-import { getChartData } from './data';
 
 type MonthlyBarChartProps = {
   activeTab: "expense" | "income";
@@ -28,6 +28,7 @@ type MonthlyBarChartProps = {
       amount: number;
     }[];
   }) => void;
+  reloadTrigger?: number;
 };
 
 export default function MonthlyBarChart({
@@ -35,7 +36,8 @@ export default function MonthlyBarChart({
   currentMonth,
   setCurrentMonth,
   activeTab,
-  setActiveTab
+  setActiveTab,
+  reloadTrigger
 }: MonthlyBarChartProps) {
   const [chartData, setChartData] = useState<any[]>([]);
   const [maxValue, setMaxValue] = useState(7.5);
@@ -57,17 +59,84 @@ export default function MonthlyBarChart({
     const date = new Date(currentMonth + "-01");
     date.setMonth(date.getMonth() + offset);
     return date.toISOString().slice(0, 7);
-  }
-  useEffect(() => {
+  }  useEffect(() => {
     setLoading(true);
     (async () => {
-      const { chartWithPercent, totalExpense } = await getChartData(currentMonth);
-      setChartData(chartWithPercent);
-      setTotalAmount(typeof totalExpense === 'number' ? totalExpense : 0);
-      onDataChange?.({ currentMonth, chartWithPercent, otherItemsDetail: chartWithPercent.slice(4) });
-      setLoading(false);
+      try {
+        const [transactionsResponse, categoriesResponse] = await Promise.all([
+          activeTab === 'expense' ? getExpensesAPI() : getIncomesAPI(),
+          getCategoriesAPI(activeTab)
+        ]);
+
+        const transactions = Array.isArray(transactionsResponse) ? transactionsResponse : [];
+        const categories = categoriesResponse || [];
+
+        const filteredTransactions = transactions.filter((tx: any) => {
+          let dateString = '';
+          if (tx.date && tx.date._seconds) {
+            const date = new Date(tx.date._seconds * 1000);
+            dateString = date.toISOString().split('T')[0]; 
+          } else if (typeof tx.date === 'string') {
+            dateString = tx.date.split('T')[0]; 
+          }
+          
+          return dateString && dateString.startsWith(currentMonth);
+        });
+
+        const categoryTotals = filteredTransactions.reduce((acc: any, tx: any) => {
+          const category = categories.find((cat: any) => cat.id === tx.categoryId);
+          const categoryName = category?.name || tx.categoryName || tx.category || 'Khác';
+          
+          if (!acc[categoryName]) {
+            acc[categoryName] = {
+              name: categoryName,
+              amount: 0,
+              icon: 'help-circle-outline',
+              color: '#666'
+            };
+          }
+          acc[categoryName].amount += tx.amount || 0;
+          return acc;
+        }, {});
+
+        Object.keys(categoryTotals).forEach(catName => {
+          const category = categories.find((cat: any) => cat.name === catName);
+          if (category) {
+            categoryTotals[catName].icon = category.icon?.icon || 'help-circle-outline';
+            categoryTotals[catName].color = category.icon?.color || '#666';
+          }
+        });
+
+        const categoryArray = Object.values(categoryTotals);
+        const totalAmount = categoryArray.reduce((sum: number, cat: any) => sum + cat.amount, 0);
+
+        const chartWithPercent = categoryArray
+          .map((cat: any) => ({
+            ...cat,
+            percent: totalAmount > 0 ? ((cat.amount / totalAmount) * 100).toFixed(1) : '0'
+          }))
+          .sort((a: any, b: any) => b.amount - a.amount);        const barData = chartWithPercent.slice(0, 5).map((item: any, index: number) => ({
+          value: typeof item.amount === 'number' && !isNaN(item.amount) ? item.amount / 1000000 : 0, 
+          label: (item.name && typeof item.name === 'string') ? item.name.substring(0, 6) : 'N/A',
+          frontColor: item.color || '#666',
+          labelTextStyle: { fontSize: 10, color: '#666' }
+        }));        setChartData(barData);
+        setTotalAmount(totalAmount);
+        
+        const maxAmount = barData.length > 0 ? Math.max(...barData.map(item => item.value)) : 0;
+        setMaxValue(Math.max(maxAmount * 1.2, 1));
+        
+        onDataChange?.({ currentMonth, chartWithPercent, otherItemsDetail: chartWithPercent.slice(4) });
+      } catch (error) {
+        console.error('Error loading chart data:', error);
+        setChartData([]);
+        setTotalAmount(0);
+        setMaxValue(7.5);
+      } finally {
+        setLoading(false);
+      }
     })();
-  }, [currentMonth, activeTab]);
+  }, [currentMonth, activeTab, reloadTrigger]);
 
   const displayMonth = new Date(currentMonth + "-01");
 
@@ -131,13 +200,16 @@ export default function MonthlyBarChart({
           spacing={20}
           maxValue={maxValue}
           stepValue={maxValue / Math.min(5, Math.ceil(maxValue / 0.5))}
-          noOfSections={Math.min(5, Math.ceil(maxValue / 0.5))}
-          yAxisLabelTexts={Array.from({ length: Math.min(5, Math.ceil(maxValue / 0.5)) + 1 }, (_, i) =>
-            `${(i * (maxValue / Math.min(5, Math.ceil(maxValue / 0.5)))).toLocaleString("vi-VN", {
-              minimumFractionDigits: 1,
-              maximumFractionDigits: 1,
-            })}`
-          )}
+          noOfSections={Math.min(5, Math.ceil(maxValue / 0.5))}          
+          yAxisLabelTexts={Array.from({ length: Math.min(5, Math.ceil(maxValue / 0.5)) + 1 }, (_, i) => {
+            const value = i * (maxValue / Math.min(5, Math.ceil(maxValue / 0.5)));
+            return typeof value === 'number' && !isNaN(value) 
+              ? value.toLocaleString("vi-VN", {
+                  minimumFractionDigits: 1,
+                  maximumFractionDigits: 1,
+                })
+              : '0.0';
+          })}
           yAxisThickness={0}
           xAxisThickness={0}
           hideRules={false}

@@ -1,3 +1,4 @@
+import { useTransactionContext } from '@/contexts/TransactionContext';
 import { addCategoryAPI, addExpenseAPI, addIncomeAPI, getCategoriesAPI } from '@/utils/api';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -17,6 +18,7 @@ import CategoryPicker from '../CategoryPicker';
 
 
 export default function ManualTransactionForm() {
+  const { triggerReload } = useTransactionContext();
   const [activeTab, setActiveTab] = useState<'expense' | 'income'>('expense');
   const [amount, setAmount] = useState('');
   const [date, setDate] = useState(new Date());
@@ -94,15 +96,16 @@ export default function ManualTransactionForm() {
         date: date.toISOString() 
       };
 
-      console.log('Adding transaction:', transactionData);
-
-      if (activeTab === 'expense') {
+      console.log('Adding transaction:', transactionData);      if (activeTab === 'expense') {
         await addExpenseAPI(transactionData);
       } else {
         await addIncomeAPI(transactionData);
       }
 
       Alert.alert('Thành công', `Đã thêm ${activeTab === 'expense' ? 'chi tiêu' : 'thu nhập'} thành công`);
+      
+      // Trigger reload data in other screens
+      triggerReload();
       
       setAmount('');
       setCategory('');
