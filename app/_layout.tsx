@@ -1,3 +1,4 @@
+import { TabBarVisibilityProvider } from '@/contexts/TabBarVisibilityContext';
 import { TransactionProvider } from '@/contexts/TransactionContext';
 import { DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
@@ -13,14 +14,18 @@ export default function RootLayout() {
 
   return (
     <TransactionProvider>
-      <ThemeProvider value={DefaultTheme}>
-        <Stack>
-          <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-          <Stack.Screen name="+not-found" />
-        </Stack>
-        <StatusBar style="auto" />
-      </ThemeProvider>
+      <TabBarVisibilityProvider>
+        <ThemeProvider value={DefaultTheme}>
+          <Stack>
+            <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+            <Stack.Screen name="(setting)" options={{ headerShown: false }} />
+            <Stack.Screen name="EditTransaction" options={{ headerShown: false }} />
+            <Stack.Screen name="+not-found" />
+          </Stack>
+          <StatusBar style="auto" />
+        </ThemeProvider>
+      </TabBarVisibilityProvider>
     </TransactionProvider>
   );
 }

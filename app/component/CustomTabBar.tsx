@@ -3,10 +3,14 @@ import { BottomTabBarProps } from "@react-navigation/bottom-tabs";
 import { usePathname, useRouter } from "expo-router";
 import React from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { useTabBarVisibility } from '@/contexts/TabBarVisibilityContext';
 
 export default function CustomTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
   const router = useRouter();
-  const pathname = usePathname(); // ✅ thêm dòng này
+  const pathname = usePathname();
+  const { visible } = useTabBarVisibility();
+
+  if (!visible) return null;
 
   if (pathname === "/add") {
     return null;

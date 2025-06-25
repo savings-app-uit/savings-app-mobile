@@ -198,7 +198,8 @@ export default function ManualTransactionForm() {
                       name: newCategory.name,
                       iconId: newCategory.icon,
                       type: activeTab
-                    });        
+                    }); 
+                    triggerReload();       
                     await loadCategories();
                     
                     Alert.alert('Thành công', 'Đã thêm danh mục mới');
