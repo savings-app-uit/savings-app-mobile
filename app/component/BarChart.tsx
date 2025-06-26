@@ -2,6 +2,7 @@ import { getCategoriesAPI, getExpensesAPI, getIncomesAPI } from "@/utils/api";
 import { Ionicons } from "@expo/vector-icons";
 import React, { useEffect, useState } from "react";
 import {
+  ActivityIndicator,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -43,6 +44,7 @@ export default function MonthlyBarChart({
   const [maxValue, setMaxValue] = useState(7.5);
   const [totalAmount, setTotalAmount] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [isTransitioning, setIsTransitioning] = useState(false);
 
   const monthLabels = Array.from({ length: 12 }, (_, i) => {
     const date = new Date();
@@ -71,7 +73,55 @@ export default function MonthlyBarChart({
         const transactions = Array.isArray(transactionsResponse) ? transactionsResponse : [];
         const categories = categoriesResponse || [];
 
-        const filteredTransactions = transactions.filter((tx: any) => {
+        const prevMonth = currentIndex > 0 ? monthLabels[currentIndex - 1] : null;
+        const thisMonth = monthLabels[currentIndex];
+        const nextMonth = currentIndex < monthLabels.length - 1 ? monthLabels[currentIndex + 1] : null;
+
+        const visibleMonths = [prevMonth, thisMonth, nextMonth].filter(Boolean);
+
+        // Tạo dữ liệu cho biểu đồ cột 
+        const data = visibleMonths.map((month) => {
+          // Lọc giao dịch cho tháng này
+          const monthTransactions = transactions.filter((tx: any) => {
+            let dateString = '';
+            if (tx.date && tx.date._seconds) {
+              const date = new Date(tx.date._seconds * 1000);
+              dateString = date.toISOString().split('T')[0]; 
+            } else if (typeof tx.date === 'string') {
+              dateString = tx.date.split('T')[0]; 
+            }
+            
+            return dateString && dateString.startsWith(month!.key);
+          });
+
+          // Tính tổng cho tháng này
+          const sum = monthTransactions.reduce((acc: number, tx: any) => acc + (tx.amount || 0), 0);
+          const valueInMil = Number((sum / 1_000_000).toFixed(1));
+          
+          let frontColor = "#C4C4C4"; 
+          if (month!.key === currentMonth) {
+            frontColor = "#EB8E90"; // Màu chính cho tháng hiện tại
+          }
+
+          return {
+            label: month!.label,
+            value: valueInMil,
+            frontColor: frontColor,
+            onPress: () => {
+              if (month!.key !== currentMonth) {
+                setIsTransitioning(true);
+                setTimeout(() => {
+                  setCurrentMonth(month!.key);
+                }, 100);
+              }
+            },
+          };
+        });
+
+        setChartData(data);
+
+        // Tính tổng cho tháng hiện tại để hiển thị
+        const thisMonthTransactions = transactions.filter((tx: any) => {
           let dateString = '';
           if (tx.date && tx.date._seconds) {
             const date = new Date(tx.date._seconds * 1000);
@@ -83,9 +133,34 @@ export default function MonthlyBarChart({
           return dateString && dateString.startsWith(currentMonth);
         });
 
-        const categoryTotals = filteredTransactions.reduce((acc: any, tx: any) => {
+        const thisMonthTotal = thisMonthTransactions.reduce((sum: number, tx: any) => sum + (tx.amount || 0), 0);
+        setTotalAmount(thisMonthTotal);
+
+        const maxDataValue = Math.max(...data.map(d => d.value));
+        
+        let calculatedMax;
+        if (maxDataValue === 0) {
+          calculatedMax = 5; // Minimum để hiển thị chart
+        } else {
+          const magnitude = Math.pow(10, Math.floor(Math.log10(maxDataValue)));
+          const normalized = maxDataValue / magnitude;
+          
+          if (normalized <= 1) calculatedMax = 1.2 * magnitude;
+          else if (normalized <= 2) calculatedMax = 2.5 * magnitude;
+          else if (normalized <= 5) calculatedMax = 6 * magnitude;
+          else calculatedMax = 12 * magnitude;
+        }
+        
+        setMaxValue(calculatedMax);
+
+        // Tạo dữ liệu chi tiết theo danh mục cho tháng hiện tại
+        const categoryTotals = thisMonthTransactions.reduce((acc: any, tx: any) => {
           const category = categories.find((cat: any) => cat.id === tx.categoryId);
-          const categoryName = category?.name || tx.categoryName || tx.category || 'Khác';
+          let categoryName = category?.name || tx.categoryName || tx.category || 'Khác';
+          
+          if (!categoryName || typeof categoryName !== 'string' || categoryName.trim() === '') {
+            categoryName = 'Khác';
+          }
           
           if (!acc[categoryName]) {
             acc[categoryName] = {
@@ -108,32 +183,22 @@ export default function MonthlyBarChart({
         });
 
         const categoryArray = Object.values(categoryTotals);
-        const totalAmount = categoryArray.reduce((sum: number, cat: any) => sum + cat.amount, 0);
-
         const chartWithPercent = categoryArray
           .map((cat: any) => ({
             ...cat,
-            percent: totalAmount > 0 ? ((cat.amount / totalAmount) * 100).toFixed(1) : '0'
+            percent: thisMonthTotal > 0 ? ((cat.amount / thisMonthTotal) * 100).toFixed(1) : '0'
           }))
-          .sort((a: any, b: any) => b.amount - a.amount);        const barData = chartWithPercent.slice(0, 5).map((item: any, index: number) => ({
-          value: typeof item.amount === 'number' && !isNaN(item.amount) ? item.amount / 1000000 : 0, 
-          label: (item.name && typeof item.name === 'string') ? item.name.substring(0, 6) : 'N/A',
-          frontColor: item.color || '#666',
-          labelTextStyle: { fontSize: 10, color: '#666' }
-        }));        setChartData(barData);
-        setTotalAmount(totalAmount);
-        
-        const maxAmount = barData.length > 0 ? Math.max(...barData.map(item => item.value)) : 0;
-        setMaxValue(Math.max(maxAmount * 1.2, 1));
+          .sort((a: any, b: any) => b.amount - a.amount);
         
         onDataChange?.({ currentMonth, chartWithPercent, otherItemsDetail: chartWithPercent.slice(4) });
       } catch (error) {
         console.error('Error loading chart data:', error);
         setChartData([]);
         setTotalAmount(0);
-        setMaxValue(7.5);
+        setMaxValue(1.5);
       } finally {
         setLoading(false);
+        setIsTransitioning(false);
       }
     })();
   }, [currentMonth, activeTab, reloadTrigger]);
@@ -144,18 +209,26 @@ export default function MonthlyBarChart({
     <View style={styles.wrapper}>
       <View style={styles.header}>
         <TouchableOpacity
-          onPress={() => setCurrentMonth(getMonthOffset(-1))}
-          disabled={currentIndex <= 0}
+          onPress={() => {
+            setIsTransitioning(true);
+            setTimeout(() => {
+              setCurrentMonth(getMonthOffset(-1));
+            }, 100);
+          }}
+          disabled={currentIndex <= 0 || isTransitioning}
         >
-          <Ionicons name="chevron-back" size={20} color="#333" />
+          <Ionicons name="chevron-back" size={20} color={currentIndex <= 0 || isTransitioning ? "#ccc" : "#333"} />
         </TouchableOpacity>
 
-        <View style={{ alignItems: "center", }}>
+        <View style={{ alignItems: "center" }}>
           <Text style={styles.monthText}>
-            {`Tháng ${displayMonth.getMonth() + 1}/${displayMonth.getFullYear()}`}
+            {displayMonth.toLocaleDateString("vi-VN", {
+              year: "numeric",
+              month: "long",
+            })}
           </Text>
 
-          <View style={{ flexDirection: "row", marginTop: 8, gap: 16, }}>
+          <View style={{ flexDirection: "row", marginTop: 8, gap: 16 }}>
             {["expense", "income"].map((type) => (
               <TouchableOpacity
                 key={type}
@@ -178,47 +251,75 @@ export default function MonthlyBarChart({
                 </Text>
               </TouchableOpacity>
             ))}
-          </View>          <Text style={styles.amountText}>
-            {typeof totalAmount === 'number' ? totalAmount.toLocaleString("vi-VN") : '0'}đ
+          </View>
+
+          <Text style={styles.amountText}>
+            {typeof totalAmount === 'number' && !isNaN(totalAmount) && isFinite(totalAmount) 
+              ? totalAmount.toLocaleString("vi-VN") 
+              : '0'}đ
           </Text>
         </View>
 
         <TouchableOpacity
-          onPress={() => setCurrentMonth(getMonthOffset(1))}
-          disabled={currentIndex >= monthLabels.length - 1}
+          onPress={() => {
+            setIsTransitioning(true);
+            setTimeout(() => {
+              setCurrentMonth(getMonthOffset(1));
+            }, 100);
+          }}
+          disabled={currentIndex >= monthLabels.length - 1 || isTransitioning}
         >
-          <Ionicons name="chevron-forward" size={20} color="#333" />
+          <Ionicons name="chevron-forward" size={20} color={currentIndex >= monthLabels.length - 1 || isTransitioning ? "#ccc" : "#333"} />
         </TouchableOpacity>
       </View>
 
       <View style={styles.chartContainer}>
-        <BarChart
-          data={chartData}
-          width={260}
-          height={250}
-          barWidth={80}
-          spacing={20}
-          maxValue={maxValue}
-          stepValue={maxValue / Math.min(5, Math.ceil(maxValue / 0.5))}
-          noOfSections={Math.min(5, Math.ceil(maxValue / 0.5))}          
-          yAxisLabelTexts={Array.from({ length: Math.min(5, Math.ceil(maxValue / 0.5)) + 1 }, (_, i) => {
-            const value = i * (maxValue / Math.min(5, Math.ceil(maxValue / 0.5)));
-            return typeof value === 'number' && !isNaN(value) 
-              ? value.toLocaleString("vi-VN", {
-                  minimumFractionDigits: 1,
-                  maximumFractionDigits: 1,
-                })
-              : '0.0';
-          })}
-          yAxisThickness={0}
-          xAxisThickness={0}
-          hideRules={false}
-          yAxisTextStyle={{ fontSize: 12, color: "#666" }}
-          xAxisLabelTextStyle={{ fontSize: 12, color: "#666" }}
-          barBorderRadius={4}
-          showReferenceLine1={false}
-          backgroundColor="transparent"
-        />
+        {chartData.length > 0 && !isTransitioning ? (
+          <BarChart
+            data={chartData}
+            width={300}
+            height={250}
+            barWidth={60}
+            spacing={40}
+            maxValue={maxValue}
+            stepValue={maxValue / 5} 
+            noOfSections={5} 
+            yAxisLabelTexts={Array.from({ length: 6 }, (_, i) => {
+              const value = (i * maxValue) / 5;
+              return value.toLocaleString("vi-VN", {
+                minimumFractionDigits: 1,
+                maximumFractionDigits: 1,
+              });
+            })}
+            yAxisThickness={0}
+            xAxisThickness={1}
+            xAxisColor="#E0E0E0"
+            hideRules={false}
+            rulesColor="#F0F0F0"
+            yAxisTextStyle={{ fontSize: 12, color: "#666" }}
+            xAxisLabelTextStyle={{ fontSize: 12, color: "#666", fontWeight: "bold" }}
+            barBorderRadius={8}
+            showReferenceLine1={false}
+            backgroundColor="transparent"
+            isAnimated={true}
+            animationDuration={800}
+          />
+        ) : (
+          <View style={{ height: 250, justifyContent: 'center', alignItems: 'center' }}>
+            {loading || isTransitioning ? (
+              <View style={{ alignItems: 'center' }}>
+                <ActivityIndicator size="large" color="#EB8E90" />
+                <Text style={{ color: '#666', fontSize: 16, marginTop: 8 }}>
+                  Đang tải...
+                </Text>
+              </View>
+            ) : (
+              <Text style={{ color: '#666', fontSize: 16 }}>
+                Không có dữ liệu
+              </Text>
+            )}
+          </View>
+        )}
       </View>
     </View>
   );
@@ -259,5 +360,11 @@ const styles = StyleSheet.create({
   chartContainer: {
     alignItems: "center",
     justifyContent: "center",
+  },
+  chartDescription: {
+    fontSize: 12,
+    color: "#999",
+    marginTop: 4,
+    fontStyle: "italic",
   },
 });
