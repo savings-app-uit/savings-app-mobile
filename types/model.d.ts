@@ -147,10 +147,24 @@ declare global {
         data?: IProfile;
     }
 
+    // Union type for API responses that may return direct profile or wrapped response
+    type IProfileAPIResponse = IProfile | IProfileResponse;
+
     interface IChangePasswordRequest {
         oldPassword: string;
         newPassword: string;
-    }    
+    }
+
+    interface IUpdateAvatarResponse {
+        message: string;
+        user: {
+            id: string;
+            name: string;
+            email: string;
+            phone: string;
+            imageUrl: string;
+        };
+    }
     
     interface IIcon {
         id: string;

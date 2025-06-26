@@ -1,13 +1,17 @@
-import { getProfileAPI, updateProfileAPI } from '@/utils/api';
+import { createAvatarFormData, extractProfileData, getProfileAPI, updateAvatarAPI } from '@/utils/api';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import MaskedView from '@react-native-masked-view/masked-view';
+import { CameraView, useCameraPermissions } from 'expo-camera';
+import * as ImagePicker from 'expo-image-picker';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect, useRouter } from "expo-router";
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
+  ActivityIndicator,
   Alert,
   Image,
+  Modal,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -20,7 +24,11 @@ export default function Profile() {
     const [loading, setLoading] = useState(true);
     const [user, setUser] = useState<IProfile | null>(null);
     const [avatar, setAvatar] = useState('');
+    const [showCameraModal, setShowCameraModal] = useState(false);
+    const [cameraPermission, requestCameraPermission] = useCameraPermissions();
+    const [isUpdatingAvatar, setIsUpdatingAvatar] = useState(false);
     const isInitialLoad = useRef(true);
+    const cameraRef = useRef<CameraView>(null);
 
     useEffect(() => {
         checkAuthAndLoadProfile();
@@ -60,16 +68,7 @@ export default function Profile() {
             setLoading(true);
             const response = await getProfileAPI();
             
-            let profileData: IProfile | null = null;
-            
-            if (response) {
-                if ('data' in response && response.data) {
-                    profileData = response.data;
-                }
-                else if ('id' in response && response.id) {
-                    profileData = response as any as IProfile;
-                }
-            }
+            const profileData = extractProfileData(response);
             
             if (profileData) {
                 setUser(profileData);
@@ -106,43 +105,122 @@ export default function Profile() {
 
     const handleAvatarEdit = () => {
         Alert.alert(
-            'Update Avatar',
-            'Choose an option',
+            'Cập nhật ảnh đại diện',
+            'Chọn một tùy chọn',
             [
-                { text: 'Camera', onPress: () => console.log('Camera selected') },
-                { text: 'Gallery', onPress: () => console.log('Gallery selected') },
-                { text: 'Remove', onPress: () => handleUpdateAvatar('') },
-                { text: 'Cancel', style: 'cancel' }
+                { text: 'Chụp ảnh', onPress: () => handleCameraOption() },
+                { text: 'Chọn từ thư viện', onPress: () => handleGalleryOption() },
+                { text: 'Hủy', style: 'cancel' }
             ]
         );
     };
 
-    const handleUpdateAvatar = async (imageUrl: string) => {
-        try {
-            const updateData: IUpdateProfileRequest = {
-                imageUrl: imageUrl
-            };
+    const handleCameraOption = async () => {
+        if (!cameraPermission) {
+            Alert.alert('Lỗi', 'Đang kiểm tra quyền camera...');
+            return;
+        }
 
-            const response = await updateProfileAPI(updateData);
-            
-            let profileData: IProfile | null = null;
-            
-            if (response) {
-                if ('data' in response && response.data) {
-                    profileData = response.data;
-                } else if ('id' in response && response.id) {
-                    profileData = response as any as IProfile;
-                }
+        if (!cameraPermission.granted) {
+            const permission = await requestCameraPermission();
+            if (!permission.granted) {
+                Alert.alert('Cần quyền truy cập', 'Vui lòng cấp quyền camera để chụp ảnh');
+                return;
             }
+        }
+
+        setShowCameraModal(true);
+    };
+
+    const handleGalleryOption = async () => {
+        try {
+            // Request permission to access media library
+            const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
             
-            if (profileData) {
-                setUser(profileData);
-                setAvatar(profileData.imageUrl || '');
-                Alert.alert('Success', 'Avatar updated successfully');
+            if (!permissionResult.granted) {
+                Alert.alert('Cần quyền truy cập', 'Vui lòng cấp quyền truy cập thư viện ảnh');
+                return;
+            }
+
+            // Launch image picker
+            const result = await ImagePicker.launchImageLibraryAsync({
+                mediaTypes: ImagePicker.MediaTypeOptions.Images,
+                allowsEditing: true,
+                aspect: [1, 1], // Square aspect for avatar
+                quality: 0.8,
+            });
+
+            if (!result.canceled && result.assets && result.assets.length > 0) {
+                const imageUri = result.assets[0].uri;
+                await handleUpdateAvatar(imageUri);
             }
         } catch (error) {
+            console.error('Error picking image:', error);
+            Alert.alert('Lỗi', 'Không thể chọn ảnh từ thư viện');
+        }
+    };
+
+    const handleTakePicture = async () => {
+        if (!cameraRef.current) {
+            Alert.alert('Lỗi', 'Camera không khả dụng');
+            return;
+        }
+
+        try {
+            const photo = await cameraRef.current.takePictureAsync({
+                quality: 0.8,
+                base64: false,
+            });
+
+            if (photo) {
+                setShowCameraModal(false);
+                await handleUpdateAvatar(photo.uri);
+            }
+        } catch (error) {
+            console.error('Error taking picture:', error);
+            Alert.alert('Lỗi', 'Không thể chụp ảnh');
+        }
+    };
+
+    const handleUpdateAvatar = async (imageUri: string) => {
+        try {
+            setIsUpdatingAvatar(true);
+            
+            // Create FormData with avatar key
+            const formData = createAvatarFormData(imageUri, 'avatar.jpg');
+            
+            // Call updateAvatarAPI
+            const response = await updateAvatarAPI(formData);
+            
+            if (response && response.user) {
+                // Update user state with new avatar URL
+                const updatedUser = {
+                    ...user!,
+                    imageUrl: response.user.imageUrl
+                };
+                setUser(updatedUser);
+                setAvatar(response.user.imageUrl);
+                
+                Alert.alert('Thành công', 'Ảnh đại diện đã được cập nhật');
+            }
+        } catch (error: any) {
             console.error('Error updating avatar:', error);
-            Alert.alert('Error', 'Failed to update avatar');
+            console.error('Error details:', {
+                message: error.message,
+                response: error.response?.data,
+                status: error.response?.status
+            });
+            
+            let errorMessage = 'Không thể cập nhật ảnh đại diện';
+            if (error.response?.data?.message) {
+                errorMessage = error.response.data.message;
+            } else if (error.message) {
+                errorMessage = error.message;
+            }
+            
+            Alert.alert('Lỗi', errorMessage);
+        } finally {
+            setIsUpdatingAvatar(false);
         }
     };
 
@@ -235,6 +313,12 @@ export default function Profile() {
                                 color="#fff"
                               />
                             </LinearGradient>
+                          )}
+                          {/* Loading overlay */}
+                          {isUpdatingAvatar && (
+                            <View style={styles.avatarLoadingOverlay}>
+                              <ActivityIndicator size="large" color="#DD5E89" />
+                            </View>
                           )}
                           {/* Edit icon overlay */}
                           <View style={styles.avatarEditIcon}>
@@ -331,9 +415,42 @@ export default function Profile() {
                         <Text style={{ color: '#999', fontSize: 12 }}>Debug Info</Text>
                       </TouchableOpacity>
                     </View>
-                  )}
+                  )}                          
               </View>    
                           
+              {/* Camera Modal */}
+              <Modal
+                visible={showCameraModal}
+                transparent={false}
+                animationType="slide"
+                onRequestClose={() => setShowCameraModal(false)}
+              >
+                <View style={styles.cameraContainer}>
+                  <CameraView
+                    ref={cameraRef}
+                    style={styles.camera}
+                    facing="front"
+                  />
+                  
+                  <View style={styles.cameraControls}>
+                    <TouchableOpacity 
+                      style={styles.cameraButton}
+                      onPress={() => setShowCameraModal(false)}
+                    >
+                      <Ionicons name="close" size={30} color="#fff" />
+                    </TouchableOpacity>
+                    
+                    <TouchableOpacity 
+                      style={styles.captureButton}
+                      onPress={handleTakePicture}
+                    >
+                      <Ionicons name="camera" size={32} color="#fff" />
+                    </TouchableOpacity>
+                    
+                    <View style={styles.cameraButton} />
+                  </View>
+                </View>
+              </Modal>
               
           </View>
       </KeyboardAwareScrollView>
@@ -404,6 +521,17 @@ const styles = StyleSheet.create({
       shadowOpacity: 0.15,
       shadowRadius: 3,
       elevation: 4,
+    },
+    avatarLoadingOverlay: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: 'rgba(0, 0, 0, 0.5)',
+      borderRadius: 999,
+      justifyContent: 'center',
+      alignItems: 'center',
     },
     nameSection: {
       alignItems: 'center',
@@ -513,5 +641,49 @@ const styles = StyleSheet.create({
         paddingLeft: 15,
         paddingRight: 15,
         borderRadius: 60
+    },
+    // Camera styles
+    cameraContainer: {
+        flex: 1,
+        position: 'relative',
+    },
+    camera: {
+        flex: 1,
+    },
+    cameraControls: {
+        position: 'absolute',
+        bottom: 50,
+        left: 0,
+        right: 0,
+        flexDirection: 'row',
+        justifyContent: 'space-around',
+        alignItems: 'center',
+        paddingHorizontal: 50,
+    },
+    cameraButton: {
+        width: 50,
+        height: 50,
+        backgroundColor: 'rgba(0,0,0,0.7)',
+        borderRadius: 25,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    captureButton: {
+        width: 80,
+        height: 80,
+        backgroundColor: '#DD5E89',
+        borderRadius: 40,
+        justifyContent: 'center',
+        alignItems: 'center',
+        elevation: 5,
+        shadowColor: '#000',
+        shadowOffset: {
+            width: 0,
+            height: 2,
+        },
+        shadowOpacity: 0.25,
+        shadowRadius: 3.84,
+        borderWidth: 4,
+        borderColor: '#fff',
     },
 });

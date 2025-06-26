@@ -1,4 +1,4 @@
-import { getProfileAPI, updateProfileAPI } from '@/utils/api';
+import { extractProfileData, getProfileAPI, isSuccessResponse, updateProfileAPI } from '@/utils/api';
 import { Ionicons } from '@expo/vector-icons';
 import MaskedView from '@react-native-masked-view/masked-view';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -36,26 +36,9 @@ export default function UpdateProfile() {
             setLoading(true);
             const response = await getProfileAPI();
             
-            let profileData: IProfile | null = null;
+            const profileData = extractProfileData(response);
             
-            if (response) {
-                if (response.data) {
-                    const responseData = response.data;
-                    if ('data' in responseData && responseData.data) {
-                        profileData = responseData.data as IProfile;
-                    } else if ('id' in responseData) {
-                        profileData = responseData as IProfile;
-                    }
-                }
-                else if ('data' in response && response.data) {
-                    profileData = response.data as IProfile;
-                } else if ('id' in response) {
-                    profileData = response as any as IProfile;
-                }
-            }
-            
-            
-            if (profileData) {
+            if (profileData && profileData.id) {
                 setUser(profileData);
                 setName(profileData.name);
                 setPhone(profileData.phone || '');
@@ -66,9 +49,22 @@ export default function UpdateProfile() {
             } else {
                 Alert.alert('Lỗi', 'Không thể tải thông tin profile từ server');
             }
-        } catch (error) {
-            console.error('Error loading profile:', error);
-            Alert.alert('Lỗi', 'Không thể tải thông tin profile');
+        } catch (error: any) {
+            console.error('❌ Error loading profile:', error);
+            console.error('Error details:', {
+                message: error.message,
+                response: error.response?.data,
+                status: error.response?.status
+            });
+            
+            let errorMessage = 'Không thể tải thông tin profile';
+            if (error.response?.status === 401) {
+                errorMessage = 'Phiên đăng nhập đã hết hạn';
+            } else if (error.response?.data?.message) {
+                errorMessage = error.response.data.message;
+            }
+            
+            Alert.alert('Lỗi', errorMessage);
         } finally {
             setLoading(false);
         }
@@ -116,32 +112,11 @@ export default function UpdateProfile() {
 
             const response = await updateProfileAPI(updateData);
             
-            let isSuccess = false;
-            
-            if (response) {
-                if (response.data) {
-                    const responseData = response.data;
-                    if ('message' in responseData && responseData.message) {
-                        isSuccess = true;
-                    }
-                    else if ('data' in responseData && responseData.data) {
-                        isSuccess = true;
-                    } else if ('id' in responseData) {
-                        isSuccess = true;
-                    }
-                }
-                else if ('message' in response && response.message) {
-                    isSuccess = true;
-                }
-                else if ('data' in response && response.data) {
-                    isSuccess = true;
-                } else if ('id' in response) {
-                    isSuccess = true;
-                }
-            }
-            
-            
-            if (isSuccess) {
+            if (isSuccessResponse(response)) {
+                
+                setOriginalName(name.trim());
+                setOriginalPhone(phone.trim());
+                
                 Alert.alert(
                     'Thành công', 
                     'Cập nhật thông tin thành công!', 
@@ -158,7 +133,12 @@ export default function UpdateProfile() {
                 Alert.alert('Lỗi', 'Không nhận được xác nhận thành công từ server');
             }
         } catch (error: any) {
-            console.error('Error updating profile:', error);
+            console.error('❌ Error updating profile:', error);
+            console.error('Error details:', {
+                message: error.message,
+                response: error.response?.data,
+                status: error.response?.status
+            });
             
             let errorMessage = 'Không thể cập nhật thông tin';
             if (error.response?.status === 400) {
@@ -167,6 +147,8 @@ export default function UpdateProfile() {
                 errorMessage = 'Phiên đăng nhập đã hết hạn';
             } else if (error.response?.data?.message) {
                 errorMessage = error.response.data.message;
+            } else if (error.message) {
+                errorMessage = error.message;
             }
             
             Alert.alert('Lỗi', errorMessage);
