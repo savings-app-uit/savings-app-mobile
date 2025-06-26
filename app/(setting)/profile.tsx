@@ -1,51 +1,172 @@
-import { forgotPasswordSendCodeAPI } from '@/utils/api';
+import { getProfileAPI, updateProfileAPI } from '@/utils/api';
 import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import MaskedView from '@react-native-masked-view/masked-view';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useRouter } from "expo-router";
-import React, { useState, useEffect } from 'react';
+import { useFocusEffect, useRouter } from "expo-router";
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
-    Alert,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
-    Image,
+  Alert,
+  Image,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View
 } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
-import ChangeFieldModal from '../component/EditModal';
-import ChangePasswordModal from '../component/ChangePasswordModal';
-import { getProfileAPI, updateProfileAPI } from '@/utils/api';
 
-// Extend IProfile
 export default function Profile() {
     const router = useRouter();
-    const [modalVisible, setModalVisible] = useState(false);
-    const [editingField, setEditingField] = useState<"username" | "phone" | "">("");
-    const [showPasswordModal, setShowPasswordModal] = useState(false);
-
-    const [username, setUsername] = useState('');
-    const [phone, setPhone] = useState('');
-    const [email, setEmail] = useState('');
-    const [avatar, setAvatar] = useState('');
     const [loading, setLoading] = useState(true);
-    
+    const [user, setUser] = useState<IProfile | null>(null);
+    const [avatar, setAvatar] = useState('');
+    const isInitialLoad = useRef(true);
 
-    const user = {
-      name: "Sanni",
-      avatar: "https://i.pinimg.com/736x/52/aa/9a/52aa9a7dcf0b72fd435ce6cd526981a1.jpg",
-      phone: "12345",
-      email: "hihihaha@gmail.com"
+    useEffect(() => {
+        checkAuthAndLoadProfile();
+    }, []);
+
+    useFocusEffect(
+        useCallback(() => {
+            if (isInitialLoad.current) {
+                isInitialLoad.current = false;
+                return;
+            }
+            
+            loadProfile();
+        }, [])
+    );
+
+    const checkAuthAndLoadProfile = async () => {
+        try {
+            const token = await AsyncStorage.getItem('accessToken');
+            
+            if (!token) {
+                Alert.alert('Authentication Error', 'Please login again', [
+                    { text: 'OK', onPress: () => router.replace('/(auth)/signin') }
+                ]);
+                return;
+            }
+            
+            await loadProfile();
+        } catch (error) {
+            console.error('Error checking auth:', error);
+            Alert.alert('Error', 'Authentication check failed');
+        }
+    };
+
+    const loadProfile = async () => {
+        try {
+            setLoading(true);
+            const response = await getProfileAPI();
+            
+            let profileData: IProfile | null = null;
+            
+            if (response) {
+                if ('data' in response && response.data) {
+                    profileData = response.data;
+                }
+                else if ('id' in response && response.id) {
+                    profileData = response as any as IProfile;
+                }
+            }
+            
+            if (profileData) {
+                setUser(profileData);
+                setAvatar(profileData.imageUrl || '');
+            } else {
+                Alert.alert('Error', 'No profile data received from server');
+            }
+        } catch (error: any) {
+            console.error('Error loading profile:', error);
+            console.error('Error details:', {
+                message: error.message,
+                status: error.response?.status,
+                data: error.response?.data
+            });
+            
+            let errorMessage = 'Failed to load profile data';
+            if (error.response?.status === 401) {
+                errorMessage = 'Please login again';
+            } else if (error.response?.status === 404) {
+                errorMessage = 'Profile not found';
+            } else if (error.response?.data?.message) {
+                errorMessage = error.response.data.message;
+            }
+            
+            Alert.alert('Error', errorMessage);
+        } finally {
+            setLoading(false);
+        }
     };
 
     const handleBack = () => {
         router.back();
     };
 
-    const handleEdit = (field: "username" | "phone") => {
-      setEditingField(field);
-      setModalVisible(true);
+    const handleAvatarEdit = () => {
+        Alert.alert(
+            'Update Avatar',
+            'Choose an option',
+            [
+                { text: 'Camera', onPress: () => console.log('Camera selected') },
+                { text: 'Gallery', onPress: () => console.log('Gallery selected') },
+                { text: 'Remove', onPress: () => handleUpdateAvatar('') },
+                { text: 'Cancel', style: 'cancel' }
+            ]
+        );
+    };
+
+    const handleUpdateAvatar = async (imageUrl: string) => {
+        try {
+            const updateData: IUpdateProfileRequest = {
+                imageUrl: imageUrl
+            };
+
+            const response = await updateProfileAPI(updateData);
+            
+            let profileData: IProfile | null = null;
+            
+            if (response) {
+                if ('data' in response && response.data) {
+                    profileData = response.data;
+                } else if ('id' in response && response.id) {
+                    profileData = response as any as IProfile;
+                }
+            }
+            
+            if (profileData) {
+                setUser(profileData);
+                setAvatar(profileData.imageUrl || '');
+                Alert.alert('Success', 'Avatar updated successfully');
+            }
+        } catch (error) {
+            console.error('Error updating avatar:', error);
+            Alert.alert('Error', 'Failed to update avatar');
+        }
+    };
+
+    const handleLogout = () => {
+        Alert.alert(
+            'Đăng xuất',
+            'Bạn có chắc chắn muốn đăng xuất?',
+            [
+                { text: 'Hủy', style: 'cancel' },
+                { 
+                    text: 'Đăng xuất', 
+                    style: 'destructive',
+                    onPress: async () => {
+                        try {
+                            await AsyncStorage.removeItem('accessToken');
+                            router.replace('/(auth)/signin');
+                        } catch (error) {
+                            console.error('Error during logout:', error);
+                            Alert.alert('Error', 'Failed to logout');
+                        }
+                    }
+                }
+            ]
+        );
     };
     return (
       <KeyboardAwareScrollView
@@ -88,96 +209,129 @@ export default function Profile() {
               </View> 
                     
               <View style={styles.content}>
-                  <View style={{display: 'flex', flexDirection: 'row', justifyContent: 'space-between'}}>
-                    <Image
-                      source={{uri: user.avatar}}
-                      style={{ width: 100, height: 100, borderRadius: 999 }}
-                    />
-                    <View style={{flexDirection: 'row', alignItems: 'center', gap: 4}}>
-                      <Text style={styles.bold}>{user.name}</Text>
-                      <TouchableOpacity onPress={() => handleEdit('username')}>
-                        <Ionicons
-                          name={'pencil-sharp'}
-                          size={20}
-                          color='#999'/>
+                  {loading ? (
+                    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', marginTop: 100 }}>
+                      <Text style={{ fontSize: 18, color: '#666' }}>Loading...</Text>
+                    </View>
+                  ) : user ? (
+                    <View style={styles.profileContainer}>
+                      {/* Avatar Section */}
+                      <View style={styles.avatarSection}>
+                        <TouchableOpacity onPress={handleAvatarEdit} style={{ position: 'relative' }}>
+                          {user.imageUrl ? (
+                            <Image
+                              source={{uri: user.imageUrl}}
+                              style={styles.avatar}
+                            />
+                          ) : (
+                            <LinearGradient 
+                              colors={['#DD5E89', '#EB8E90', '#F7BB97']} 
+                              start={{ x: 0, y: 0 }} 
+                              end={{ x: 1, y: 0 }}
+                              style={styles.avatarGradient}>
+                              <Ionicons
+                                name="person"
+                                size={60}
+                                color="#fff"
+                              />
+                            </LinearGradient>
+                          )}
+                          {/* Edit icon overlay */}
+                          <View style={styles.avatarEditIcon}>
+                            <Ionicons
+                              name="camera"
+                              size={18}
+                              color="#999"
+                            />
+                          </View>
+                        </TouchableOpacity>
+                      </View>
+
+                      {/* User Name */}
+                      <View style={styles.nameSection}>
+                        <Text style={styles.userName}>{user.name}</Text>
+                        <Text style={styles.userEmail}>{user.email}</Text>
+                      </View>
+
+                      {/* Action Buttons */}
+                      <View style={styles.actionsContainer}>
+                        <TouchableOpacity 
+                          style={styles.actionButton}
+                          onPress={() => router.push('./update-profile')}
+                        >
+                          <LinearGradient 
+                            start={{x: 0, y: 0}} 
+                            end={{x: 1, y: 0}} 
+                            colors={['#DD5E89', '#EB8E90', '#F7BB97']} 
+                            style={styles.buttonGradient}>
+                            <Ionicons name="person-outline" size={20} color="#fff" style={styles.buttonIcon} />
+                            <Text style={styles.buttonText}>
+                              Cập nhật thông tin cá nhân
+                            </Text>
+                          </LinearGradient>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity 
+                          style={styles.actionButton}
+                          onPress={() => router.push('./change-password')}
+                        >
+                          <LinearGradient 
+                            start={{x: 0, y: 0}} 
+                            end={{x: 1, y: 0}} 
+                            colors={['#DD5E89', '#EB8E90', '#F7BB97']} 
+                            style={styles.buttonGradient}>
+                            <Ionicons name="lock-closed-outline" size={20} color="#fff" style={styles.buttonIcon} />
+                            <Text style={styles.buttonText}>
+                              Đổi mật khẩu
+                            </Text>
+                          </LinearGradient>
+                        </TouchableOpacity>
+                      </View>
+
+                      {/* Logout Button - Fixed at bottom */}
+                      <View style={styles.logoutContainer}>
+                        <TouchableOpacity 
+                          style={styles.logoutButton}
+                          onPress={handleLogout}
+                        >
+                          <LinearGradient 
+                            start={{x: 0, y: 0}} 
+                            end={{x: 1, y: 0}} 
+                            colors={['#FF6B6B', '#FF8E85', '#FFB199']} 
+                            style={styles.buttonGradient}>
+                            <Ionicons name="log-out-outline" size={20} color="#fff" style={styles.buttonIcon} />
+                            <Text style={styles.buttonText}>
+                              Đăng xuất
+                            </Text>
+                          </LinearGradient>
+                        </TouchableOpacity>
+                      </View>
+                    </View>
+                  ) : (
+                    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20, marginTop: 100 }}>
+                      <Text style={{ marginBottom: 20, textAlign: 'center', fontSize: 18, color: '#666' }}>Failed to load profile</Text>
+                      <Text style={{ marginBottom: 20, textAlign: 'center', color: '#999', fontSize: 12 }}>
+                        Check the console for error details
+                      </Text>
+                      <TouchableOpacity onPress={checkAuthAndLoadProfile} style={{ marginBottom: 10 }}>
+                        <LinearGradient 
+                            start={{x: 0, y: 0}} 
+                            end={{x: 1, y: 0}} 
+                            colors={['#DD5E89', '#EB8E90', '#F7BB97']} 
+                            style={[styles.linearGradient1, { paddingHorizontal: 20 }]}>
+                            <Text style={styles.buttonText1}>
+                                Retry
+                            </Text>
+                        </LinearGradient>
+                      </TouchableOpacity>
+                      <TouchableOpacity onPress={async () => {
+                        const token = await AsyncStorage.getItem('accessToken');
+                        Alert.alert('Debug Info', `Token: ${token ? 'exists' : 'not found'}\nAPI URL: ${process.env.EXPO_PUBLIC_API_URL || 'not set'}`);
+                      }}>
+                        <Text style={{ color: '#999', fontSize: 12 }}>Debug Info</Text>
                       </TouchableOpacity>
                     </View>
-                  </View>
-                  <View style={{display: 'flex', flexDirection: 'row', justifyContent: 'space-between', marginTop: 16}}>
-                    <View>
-                      <Text style={styles.label}>
-                          Email
-                      </Text>
-                      <Text style={styles.data}>
-                        {user.email}
-                      </Text>
-                    </View>
-                  </View>
-                  <View style={{display: 'flex', flexDirection: 'row', justifyContent: 'space-between', marginTop: 16}}>
-                    <View>
-                      <Text style={styles.label}>
-                          Phone
-                      </Text>
-                      <Text style={styles.data}>
-                        {user.phone}
-                      </Text>
-                    </View>
-                    <TouchableOpacity onPress={() => handleEdit('phone')}>
-                      <LinearGradient 
-                          start={{x: 0, y: 0}} 
-                          end={{x: 1, y: 0}} 
-                          colors={['#DD5E89', '#EB8E90', '#F7BB97']} 
-                          style={[styles.linearGradient1]}>
-
-                          <Text style={styles.buttonText1}>
-                              Edit
-                          </Text>
-                      </LinearGradient>
-                  </TouchableOpacity>
-                  <ChangeFieldModal
-                    visible={modalVisible}
-                    field={editingField}
-                    currentValue={editingField === "username" ? username : phone}
-                    onClose={() => setModalVisible(false)}
-                    onSave={()=> null}
-                  />
-                  </View>
-                  <ChangePasswordModal
-                    visible={showPasswordModal}
-                    onClose={() => setShowPasswordModal(false)}
-                    onSave={(currentPass, newPass) => {
-                      // TODO: gọi API đổi mật khẩu
-                      console.log("Current:", currentPass);
-                      console.log("New:", newPass);
-                      setShowPasswordModal(false);
-                    }}
-                  />
-                  <View style={{ height: 1, backgroundColor: '#ccc', marginVertical: 16 }} />
-                  <TouchableOpacity onPress={() => setShowPasswordModal(true)}>
-                      <LinearGradient 
-                          start={{x: 0, y: 0}} 
-                          end={{x: 1, y: 0}} 
-                          colors={['#DD5E89', '#EB8E90', '#F7BB97']} 
-                          style={[styles.linearGradient, {marginTop: 20, alignSelf: 'center', width: '80%', height: 50}]}>
-
-                          <Text style={styles.buttonText}>
-                              Change your Password
-                          </Text>
-                      </LinearGradient>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity>
-                      <LinearGradient 
-                          start={{x: 0, y: 0}} 
-                          end={{x: 1, y: 0}} 
-                          colors={['#DD5E89', '#EB8E90', '#F7BB97']} 
-                          style={[styles.linearGradient, {marginTop: 20, alignSelf: 'center', width: '80%', height: 50}]}>
-
-                          <Text style={styles.buttonText}>
-                              Log out
-                          </Text>
-                      </LinearGradient>
-                  </TouchableOpacity>
+                  )}
               </View>    
                           
               
@@ -201,6 +355,126 @@ const styles = StyleSheet.create({
       marginTop: 20,
       padding: 30
     },
+    profileContainer: {
+      flex: 1,
+      alignItems: 'center',
+      paddingTop: 40,
+      position: 'relative',
+      paddingBottom: 100, 
+    },
+    avatarSection: {
+      alignItems: 'center',
+      marginBottom: 30,
+    },
+    avatar: {
+      width: 120,
+      height: 120,
+      borderRadius: 999,
+    },
+    avatarGradient: {
+      width: 120,
+      height: 120,
+      borderRadius: 999,
+      justifyContent: 'center',
+      alignItems: 'center',
+      shadowColor: '#000',
+      shadowOffset: {
+        width: 0,
+        height: 4,
+      },
+      shadowOpacity: 0.15,
+      shadowRadius: 6,
+      elevation: 8,
+    },
+    avatarEditIcon: {
+      position: 'absolute',
+      bottom: 5,
+      right: 5,
+      backgroundColor: '#fff',
+      borderRadius: 18,
+      width: 36,
+      height: 36,
+      justifyContent: 'center',
+      alignItems: 'center',
+      shadowColor: '#000',
+      shadowOffset: {
+        width: 0,
+        height: 2,
+      },
+      shadowOpacity: 0.15,
+      shadowRadius: 3,
+      elevation: 4,
+    },
+    nameSection: {
+      alignItems: 'center',
+      marginBottom: 40,
+    },
+    userName: {
+      fontFamily: 'Inter',
+      fontSize: 28,
+      fontWeight: '700',
+      color: '#333',
+      marginBottom: 8,
+    },
+    userEmail: {
+      fontFamily: 'Inter',
+      fontSize: 16,
+      color: '#666',
+      fontWeight: '400',
+    },
+    actionsContainer: {
+      width: '100%',
+      paddingHorizontal: 20,
+      flex: 1,
+    },
+    logoutContainer: {
+      position: 'absolute',
+      bottom: 30,
+      left: 20,
+      right: 20,
+    },
+    logoutButton: {
+      borderRadius: 16,
+      overflow: 'hidden',
+      shadowColor: '#000',
+      shadowOffset: {
+        width: 0,
+        height: 2,
+      },
+      shadowOpacity: 0.1,
+      shadowRadius: 4,
+      elevation: 4,
+    },
+    actionButton: {
+      marginBottom: 16,
+      borderRadius: 16,
+      overflow: 'hidden',
+      shadowColor: '#000',
+      shadowOffset: {
+        width: 0,
+        height: 2,
+      },
+      shadowOpacity: 0.1,
+      shadowRadius: 4,
+      elevation: 4,
+    },
+    buttonGradient: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingVertical: 16,
+      paddingHorizontal: 24,
+    },
+    buttonIcon: {
+      marginRight: 12,
+    },
+    buttonText: {
+      fontFamily: 'Inter',
+      fontSize: 16,
+      fontWeight: '600',
+      color: '#fff',
+    },
+    // Legacy styles for compatibility
     bold: {
       fontFamily: 'Inter',
       fontWeight: 700,
@@ -239,13 +513,5 @@ const styles = StyleSheet.create({
         paddingLeft: 15,
         paddingRight: 15,
         borderRadius: 60
-    },
-    buttonText: {
-        fontFamily: 'Inter',
-        fontSize: 16,
-        fontWeight: 'bold',
-        color: '#fff',
-        textAlign: 'center',
-        paddingVertical: 15,
     },
 });

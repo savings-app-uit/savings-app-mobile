@@ -134,7 +134,57 @@ export const changePasswordAPI = (data: IChangePasswordRequest) => {
   return axios.post<{ message: string }>(url, data);
 };
 
+// 21. Scan Receipt/Invoice
+export const scanReceiptAPI = (imageFile: FormData) => {
+  const url = `/api/scan`;
+  return axios.post<IScanReceiptResponse>(url, imageFile, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
+};
+
+export const createImageFormData = (imageUri: string, fileName?: string) => {
+  const formData = new FormData();
+  
+  formData.append('image', {
+    uri: imageUri,
+    type: 'image/jpeg', 
+    name: fileName || 'receipt.jpg',
+  } as any);
+  
+  return formData;
+};
+
 // ===== UTILITY FUNCTIONS =====
+
+export const parseVietnameseDate = (dateString: string): Date | null => {
+  if (!dateString) return null;
+  
+  try {
+    if (dateString.includes('/')) {
+      const [day, month, year] = dateString.split('/');
+      
+      const isoDateString = `${month}/${day}/${year}`;
+      
+      const parsedDate = new Date(isoDateString);
+      
+      if (!isNaN(parsedDate.getTime())) {
+        return parsedDate;
+      } else {
+      }
+    } else {
+      const parsedDate = new Date(dateString);
+      if (!isNaN(parsedDate.getTime())) {
+        return parsedDate;
+      }
+    }
+    
+    return null;
+  } catch (error) {
+    return null;
+  }
+};
 
 // Get all transactions (both income and expense)
 export const getAllTransactionsAPI = async () => {

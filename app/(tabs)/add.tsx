@@ -1,18 +1,24 @@
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import ManualEntry from '../component/tabs/ManualEntry';
 import ReceiptScanner from '../component/tabs/ReceiptScanner';
-import { useRouter } from 'expo-router';
 
 export default function AddTransactionScreen() {
   const [activeTab, setActiveTab] = useState<'manual' | 'scan'>('manual');
+  const [scanResult, setScanResult] = useState<IScanReceiptResponse | null>(null);
   const router = useRouter();
+
+  const handleScanResult = (result: IScanReceiptResponse) => {
+    setScanResult(result);
+    setActiveTab('manual');
+  };
 
   return (
     <View style={styles.container}>
@@ -71,7 +77,11 @@ export default function AddTransactionScreen() {
       </View>
 
       {/* Tab Content */}
-      {activeTab === 'manual' ? <ManualEntry /> : <ReceiptScanner />}
+      {activeTab === 'manual' ? (
+        <ManualEntry scanResult={scanResult} />
+      ) : (
+        <ReceiptScanner onScanResult={handleScanResult} />
+      )}
     </View>
   );
 }

@@ -1,5 +1,5 @@
 import { useTransactionContext } from '@/contexts/TransactionContext';
-import { addCategoryAPI, addExpenseAPI, addIncomeAPI, getCategoriesAPI } from '@/utils/api';
+import { addCategoryAPI, addExpenseAPI, addIncomeAPI, getCategoriesAPI, parseVietnameseDate } from '@/utils/api';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { LinearGradient } from 'expo-linear-gradient';
 import React, { useEffect, useState } from 'react';
@@ -16,8 +16,11 @@ import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view
 import AddCategoryModal from '../AddCategoryModal';
 import CategoryPicker from '../CategoryPicker';
 
+interface ManualEntryProps {
+  scanResult?: IScanReceiptResponse | null;
+}
 
-export default function ManualTransactionForm() {
+export default function ManualTransactionForm({ scanResult }: ManualEntryProps) {
   const { triggerReload } = useTransactionContext();
   const [activeTab, setActiveTab] = useState<'expense' | 'income'>('expense');
   const [amount, setAmount] = useState('');
@@ -35,16 +38,49 @@ export default function ManualTransactionForm() {
   useEffect(() => {
     loadCategories();
   }, []);
+  
   useEffect(() => {
     loadCategories();
     setCategory('');
     setCategoryId('');
-  }, [activeTab]);  const loadCategories = async () => {
+  }, [activeTab]);
+
+  useEffect(() => {
+    if (scanResult) {
+      if (scanResult.category?.type) {
+        const newType = scanResult.category.type === 'income' ? 'income' : 'expense';
+        setActiveTab(newType);
+      }
+      
+      if (scanResult.amount && typeof scanResult.amount === 'string') {
+        const scannedAmount = parseFloat(scanResult.amount.replace(/[^\d.]/g, ''));
+        if (!isNaN(scannedAmount) && scannedAmount > 0) {
+          setAmount(scannedAmount.toString());
+        }
+      }
+      
+      if (scanResult.date) {
+        const parsedDate = parseVietnameseDate(scanResult.date);
+        
+        if (parsedDate) {
+          setDate(parsedDate);
+        } else {
+        }
+      }
+      
+      if (scanResult.category?.name) {
+        setCategory(scanResult.category.name);
+      }
+      if (scanResult.category?.id) {
+        setCategoryId(scanResult.category.id);
+      }
+    }
+  }, [scanResult]);
+
+  const loadCategories = async () => {
     setLoading(true);
     try {
-      console.log('Loading categories for type:', activeTab);
       const response = await getCategoriesAPI(activeTab);
-      console.log('API Response:', response);
       
       if (response && Array.isArray(response)) {
         const mappedCategories = response.map((cat: ICategory) => ({
@@ -54,7 +90,6 @@ export default function ManualTransactionForm() {
           color: cat.icon.color, 
         }));
 
-        console.log('Mapped categories:', mappedCategories);
 
         if (activeTab === 'expense') {
           setExCategoryList(mappedCategories);
@@ -62,7 +97,6 @@ export default function ManualTransactionForm() {
           setInCategoryList(mappedCategories);
         }
       } else {
-        console.log('No data in response or data is not array');
       }
     } catch (error) {
       console.error('Error loading categories:', error);
@@ -96,7 +130,7 @@ export default function ManualTransactionForm() {
         date: date.toISOString() 
       };
 
-      console.log('Adding transaction:', transactionData);      if (activeTab === 'expense') {
+      if (activeTab === 'expense') {
         await addExpenseAPI(transactionData);
       } else {
         await addIncomeAPI(transactionData);
@@ -104,7 +138,6 @@ export default function ManualTransactionForm() {
 
       Alert.alert('Thành công', `Đã thêm ${activeTab === 'expense' ? 'chi tiêu' : 'thu nhập'} thành công`);
       
-      // Trigger reload data in other screens
       triggerReload();
       
       setAmount('');
@@ -129,6 +162,15 @@ export default function ManualTransactionForm() {
       contentContainerStyle={{ flexGrow: 1, backgroundColor: '#fff' }}
     >
       <View style={{ flex: 1, backgroundColor: '#fff' }}>
+        {/* Show scan result notification */}
+        {scanResult && (
+          <View style={styles.scanResultNotification}>
+            <Text style={styles.scanResultText}>
+              Dữ liệu đã được điền từ hóa đơn quét
+            </Text>
+          </View>
+        )}
+        
         {/* Tabs */}
         <View style={styles.tabContainer}>
           <TouchableOpacity onPress={() => setActiveTab('expense')} style={styles.tab}>
@@ -353,5 +395,20 @@ const styles = StyleSheet.create({
     marginHorizontal: 8,
     alignItems: 'center',
     borderRadius: 20,
-    },
+  },
+  scanResultNotification: {
+    backgroundColor: '#e8f5e8',
+    borderColor: '#28a745',
+    borderWidth: 1,
+    borderRadius: 8,
+    padding: 12,
+    margin: 16,
+    marginBottom: 8,
+  },
+  scanResultText: {
+    color: '#155724',
+    textAlign: 'center',
+    fontSize: 14,
+    fontWeight: '500',
+  },
 });
