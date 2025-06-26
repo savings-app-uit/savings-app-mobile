@@ -162,4 +162,22 @@ declare global {
         message: string;
         data?: IIcon[];
     }
+
+    // Scan Receipt/Invoice Response
+    interface IScanReceiptResponse {
+        category: {
+            id: string;
+            name: string;
+            iconId: string;
+            type: string;
+            isDefault: boolean;
+            userId: string | null;
+            icon: {
+                icon: string;
+                color: string;
+            };
+        };
+        date: string;
+        amount: string;
+    }
 }
