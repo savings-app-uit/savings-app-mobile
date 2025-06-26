@@ -9,6 +9,10 @@ import {
     TouchableOpacity,
     View,
 } from "react-native";
+import ConfirmDeleteModal from "./ConfirmDelete";
+import { deleteCategoryAPI } from '@/utils/api';
+import { Alert } from 'react-native';
+import { useTransactionContext } from '@/contexts/TransactionContext';
 
 const screenHeight = Dimensions.get("window").height;
 
@@ -17,7 +21,7 @@ interface Props {
   onClose: () => void;
   onApply: (selected: string[]) => void;
   onAddCategory: () => void;
-  categories: { name: string; icon: string; color: string }[]; // danh sách truyền vào
+  categories: { id: string; name: string; icon: string; color: string }[]; 
 }
 
 export default function Filter({
@@ -28,6 +32,8 @@ export default function Filter({
   categories,
 }: Props) {
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [showCategoryDeleteModal, setShowCategoryDeleteModal] = useState(false);
+  const { triggerReload } = useTransactionContext();
 
   const toggleCategory = (name: string) => {
     setSelectedCategories((prev) =>
@@ -44,6 +50,26 @@ export default function Filter({
 
   const clearFilter = () => {
     setSelectedCategories([]);
+  };
+
+  const handleDeleteCategory = async () => {
+    try {
+      setShowCategoryDeleteModal(false);
+
+      for (const name of selectedCategories) {
+        const cat = categories.find((c) => c.name === name);
+        if (cat) {
+          await deleteCategoryAPI(cat.id); 
+        }
+      }
+
+      triggerReload();
+      Alert.alert('Thành công', 'Đã xoá danh mục đã chọn');
+      setSelectedCategories([]); // clear sau khi xoá
+    } catch (error) {
+      console.error('Delete category error:', error);
+      Alert.alert('Lỗi', 'Không thể xoá danh mục');
+    }
   };
 
   return (
@@ -90,10 +116,19 @@ export default function Filter({
           <TouchableOpacity style={styles.closeButton} onPress={onClose}>
             <Ionicons name="close" size={24} color="grey" />
           </TouchableOpacity>
-          {/* <TouchableOpacity style={styles.addButton} onPress={onAddCategory}>
-            <Ionicons name="add" size={16} color="#fff" />
-            <Text style={{ fontSize: 12, color: "#fff" }}>Thêm danh mục</Text>
-          </TouchableOpacity> */}
+          <TouchableOpacity 
+            style={styles.addButton} 
+            disabled={selectedCategories.length === 0}
+            onPress={() => setShowCategoryDeleteModal(true)}>
+            <Ionicons name="trash" size={16} color="#fff" />
+            <Text style={{ fontSize: 12, color: "#fff" }}>Xóa danh mục</Text>
+          </TouchableOpacity>
+          <ConfirmDeleteModal
+            visible={showCategoryDeleteModal}
+            onClose={() => setShowCategoryDeleteModal(false)}
+            onConfirm={handleDeleteCategory}
+            itemType = 'category'
+          />
         </View>
       </View>
     </Modal>

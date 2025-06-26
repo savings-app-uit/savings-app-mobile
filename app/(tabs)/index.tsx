@@ -13,6 +13,7 @@ import {
 } from "react-native";
 import MonthlyBarChart from "../component/BarChart";
 import MonthlySummary from "../component/PieChart";
+import { router } from 'expo-router';
 
 const screenWidth = Dimensions.get("window").width;
 const User = {
@@ -37,6 +38,10 @@ export default function OverviewScreen() {
     setChartWithPercent(chartWithPercent || []);
     setOtherItemsDetail(otherItemsDetail || []);
   };
+
+  const handleGoToProfile = () => {
+    router.push('/(setting)/profile');
+  }
 
   return (
     <ScrollView style={{flex: 1, backgroundColor: "#f3f2f8"}}>
@@ -65,6 +70,7 @@ export default function OverviewScreen() {
             </MaskedView>
             <Text style={styles.headerText}>!</Text>
           </View>
+          <TouchableOpacity onPress={handleGoToProfile}>
           <MaskedView
             maskElement={
               <Text style={styles.gradientText}>
@@ -82,6 +88,7 @@ export default function OverviewScreen() {
               </Text>
             </LinearGradient>
           </MaskedView>
+          </TouchableOpacity>
         </View>
         <View style={{display: 'flex', flexDirection: 'row', justifyContent: 'space-between', alignItems:'center'}}>
           <Text style={styles.sectionTitle}>Tổng quan</Text>

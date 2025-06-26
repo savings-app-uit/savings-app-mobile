@@ -1,8 +1,8 @@
 import { useTransactionContext } from '@/contexts/TransactionContext';
-import { getCategoriesAPI, getExpensesAPI, getIncomesAPI } from '@/utils/api';
+import { getCategoriesAPI, getExpensesAPI, getIncomesAPI, deleteTransactionAPI } from '@/utils/api';
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import {
   FlatList,
   LayoutAnimation,
@@ -12,10 +12,18 @@ import {
   TouchableOpacity,
   UIManager,
   View,
+  TouchableWithoutFeedback,
+  Keyboard,
+  Alert
 } from "react-native";
 import { Calendar } from "react-native-calendars";
 import AddCategoryModal from "../component/AddCategoryModal";
 import Filter from "../component/filter";
+import { BlurView } from 'expo-blur';
+import { useTabBarVisibility } from '@/contexts/TabBarVisibilityContext';
+import { useRouter } from 'expo-router';
+import ConfirmDeleteModal from '../component/ConfirmDelete';
+
 
 type Category = {
   id: string;
@@ -133,6 +141,53 @@ export default function HistoryScreen() {
   const toggleCalendar = () => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setExpanded(!expanded);
+  };
+
+  const [selectedTransaction, setSelectedTransaction] = useState<any | null>(null);
+  const [contextMenuVisible, setContextMenuVisible] = useState(false);
+  const [contextMenuPosition, setContextMenuPosition] = useState({ x: 0, y: 0 });
+  const transactionRefs = useRef<Record<string, View | null>>({});
+  const [transactionBoxPosition, setTransactionBoxPosition] = useState({ x: 0, y: 0, width: 0, height: 0 });
+  const router = useRouter();
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [isHolding, setIsHolding] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const { triggerReload } = useTransactionContext();
+  
+  const { setVisible } = useTabBarVisibility();
+
+  const dismissContextMenu = () => {  
+  setContextMenuVisible(false);
+  setSelectedTransaction(null);
+  setVisible(true);
+};
+
+  const handleEdit = () => {
+    router.push({
+      pathname: '../EditTransaction',
+      params: {
+        transaction: JSON.stringify(selectedTransaction), // cần stringify nếu là object
+      },
+    });
+  };
+
+  const handleDelete = async () => {
+    try {
+      setShowDeleteModal(false);
+      setLoading(true);
+      if (!selectedTransaction) return;
+      await deleteTransactionAPI(selectedTransaction.id);
+      dismissContextMenu();
+      triggerReload(); // nếu có context reload
+      Alert.alert('Thành công', 'Giao dịch đã được xoá');
+    } catch (error) {
+      console.error(error);
+      Alert.alert('Lỗi', 'Không thể xoá giao dịch');
+    } finally {
+      setShowDeleteModal(false);
+      setSelectedTransaction(null); // ✅ Reset tại đây
+      setContextMenuVisible(false);
+    }
   };
 
   return (
@@ -295,7 +350,7 @@ export default function HistoryScreen() {
             }}
           />
         )}
-        <TouchableOpacity onPress={toggleCalendar}>
+        <TouchableOpacity onPress={() => { toggleCalendar();}}>
           <View style={styles.toggleBtn}>
             {expanded ? (
               <Ionicons name={"chevron-up"} size={24} color="#999" />
@@ -321,13 +376,35 @@ export default function HistoryScreen() {
           data={groupedData()}
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => (
-            <View style={styles.card}>
+            
+              <View style={styles.card}>
               <Text style={styles.cardDate}>{item.date}</Text>
               <View style={styles.dataCard}>
-                {item.data.map((tx) => {
+                  {item.data.map((tx) => {
+                    
                   const cat = categories.find((c) => c.name === tx.category);
                   return (
-                    <View key={tx.id} style={styles.transactionRow}>
+                    <TouchableOpacity
+                      key={tx.id}
+                      ref={(ref) => { transactionRefs.current[tx.id] = ref; }}
+                      onLongPress={() => {
+                        const ref = transactionRefs.current[tx.id];
+                        setIsHolding(true);
+                        if (ref) {
+                          ref.measure((x, y, width, height, pageX, pageY) => {
+                            setSelectedTransaction(tx);
+                            setContextMenuVisible(true);
+                            setVisible(false);
+                            setContextMenuPosition({ x: pageX, y: pageY });
+                            setTransactionBoxPosition({ x: pageX, y: pageY, width, height });
+                          });
+                        }
+                      }}
+                      style={[
+                        styles.transactionRow,
+                        selectedTransaction === tx.id && styles.highlightedRow,
+                      ]}>
+                    <View key={tx.id}>
                       <View
                         style={{
                           display: "flex",
@@ -374,6 +451,7 @@ export default function HistoryScreen() {
                         </View>
                       </View>
                     </View>
+                  </TouchableOpacity>
                   );
                 })}
               </View>
@@ -381,8 +459,102 @@ export default function HistoryScreen() {
           )}
           contentContainerStyle={{ paddingBottom: 100 }}
         />
-      )}
+      )}  
+      {contextMenuVisible && (
+  <View style={StyleSheet.absoluteFill}>
+    {/* Overlay */}
+    <TouchableWithoutFeedback onPress={dismissContextMenu}>
+      <BlurView intensity={50} tint="dark" style={StyleSheet.absoluteFill} />
+    </TouchableWithoutFeedback>
 
+    {/* Giao dịch được chọn hiển thị nổi lên */}
+    {selectedTransaction && (
+      <View
+        style={[
+          styles.transactionRow,
+          styles.highlightedRow,
+          {
+            position: 'absolute',
+            top: transactionBoxPosition.y,
+            left: transactionBoxPosition.x,
+            width: transactionBoxPosition.width,
+            backgroundColor: '#fff',
+            borderRadius: 12,
+            elevation: 5,
+            zIndex: 1000,
+          },
+        ]}
+      >
+        <View
+          style={{
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            padding: 8,
+          }}
+        >
+          <View>
+            <Ionicons
+              name={getCategoryIcon(selectedTransaction.category) as any}
+              size={24}
+              color={
+                categories.find((c) => c.name === selectedTransaction.category)
+                  ?.color ?? '#000'
+              }
+            />
+            <Text style={{ fontWeight: 'bold' }}>
+              {selectedTransaction.category}
+            </Text>
+          </View>
+          <View style={{ alignItems: 'flex-end' }}>
+            <Text style={{ fontSize: 18, fontWeight: 'bold' }}>
+              {selectedTransaction.amount.toLocaleString('vi-VN')}đ
+            </Text>
+            <Text style={{ fontSize: 12, color: 'gray' }}>
+              {selectedTransaction.title}
+            </Text>
+          </View>
+        </View>
+      </View>
+    )}
+
+      {/* Menu nổi */}
+      <View
+        style={[
+          styles.contextMenu,
+          {
+            top: transactionBoxPosition.y + 80,
+            right: transactionBoxPosition.x,
+          },
+        ]}
+      >
+        <TouchableOpacity
+          style={styles.menuItem}
+          onPress={() => {
+            dismissContextMenu();
+            handleEdit();
+          }}
+        >
+          <Text style={{ color: 'black', fontFamily: 'Inter', fontSize: 16 }}>Chỉnh sửa</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.menuItem}
+          onPress={() => {
+            setContextMenuVisible(false); // ✅ Chỉ ẩn menu, KHÔNG xoá selectedTransaction
+            setShowDeleteModal(true);
+            setIsHolding(false);
+          }}
+        >
+          <Text style={{ color: 'red',  fontFamily: 'Inter', fontSize: 16 }}>Xoá</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  )}
+      <ConfirmDeleteModal
+        visible={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        onConfirm={handleDelete}
+      />
       <Filter
         visible={filterVisible}
         onClose={() => setFilterVisible(false)}
@@ -394,7 +566,10 @@ export default function HistoryScreen() {
       <AddCategoryModal
         visible={addModalOpen}
         onClose={() => setAddModalOpen(false)}
-        onSave={() => null}
+        onSave={() => {
+          triggerReload(); // << Gọi reload sau khi thêm danh mục
+          setAddModalOpen(false);
+        }}
       />
     </View>
   );
@@ -437,4 +612,31 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: "#eee",
   },
+  highlightedRow: {
+  backgroundColor: "#ffecec",
+  borderColor: "#ff9999",
+  borderWidth: 1,
+  borderRadius: 8,
+},
+
+contextMenu: {
+  position: "absolute",
+  backgroundColor: "#fff",
+  padding: 8,
+  borderRadius: 8,
+  elevation: 5,
+  zIndex: 9999,
+},
+
+menuItem: {
+  paddingVertical: 8,
+  paddingHorizontal: 16,
+  borderBottomWidth: 1,
+  borderBottomColor: "#eee",
+},
+overlay: {
+  ...StyleSheet.absoluteFillObject,
+  backgroundColor: 'rgba(0, 0, 0, 0.3)',
+
+},
 });
