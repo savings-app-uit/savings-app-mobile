@@ -60,12 +60,15 @@ export default function OTP() {
                 }
             } else if (currentFlow === 'signup') {
                 response = await signUpVerifyCodeAPI(email, otp);
-                if (response.message) {
-                    // Navigate to signup.tsx to complete registration
+                if (response.message == "Code verified successfully") {
                     router.push({
                         pathname: '/(auth)/signup',
                         params: { email, code: otp }
                     });
+                }
+                else {
+                    Alert.alert('Lỗi', 'Mã xác minh không chính xác!');
+                    return;
                 }
             } else {
                 Alert.alert('Error', 'Invalid verification context');

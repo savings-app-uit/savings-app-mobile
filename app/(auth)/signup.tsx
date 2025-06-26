@@ -85,7 +85,7 @@ export default function SignUp() {
         setLoading(true);
         try {
             const response = await signUpAPI(username, phone, emailState, password, code);
-            if (response.message) {
+            if (response.message == "Signup successful") {
                 // Store token if provided
                 if (response.token) {
                     await AsyncStorage.setItem('accessToken', response.token);

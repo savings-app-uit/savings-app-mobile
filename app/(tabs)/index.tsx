@@ -14,6 +14,7 @@ import {
 } from "react-native";
 import MonthlyBarChart from "../component/BarChart";
 import MonthlySummary from "../component/PieChart";
+import RewindCard from "../component/RewindCard";
 
 
 export default function OverviewScreen() {
@@ -136,6 +137,10 @@ export default function OverviewScreen() {
           </MaskedView>
           </TouchableOpacity>
         </View>
+
+        {/* Zentra Wrapped Card */}
+        <RewindCard onPress={() => router.push('/rewind/' as any)} />
+
         <View style={{display: 'flex', flexDirection: 'row', justifyContent: 'space-between', alignItems:'center'}}>
           <Text style={styles.sectionTitle}>Tổng quan</Text>
           <View style={{ flexDirection: "row", alignSelf: "center", borderRadius: 16, backgroundColor: "#f8f8f8", overflow: "hidden", marginBottom: 8, marginRight: 16 }}>

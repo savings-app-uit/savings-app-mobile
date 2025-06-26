@@ -52,7 +52,9 @@ declare global {
             id: string;
             email: string;
         };
-    }    interface ISignupResponse {
+    } 
+       
+    interface ISignupResponse {
         message: string;
         token?: string;
         user?: {
@@ -194,4 +196,21 @@ declare global {
         date: string;
         amount: string;
     }
+
+    // Rewind Response Interfaces
+    interface IRewindSlide {
+        type: 'intro' | 'top_category' | 'biggest_transaction' | 'weekend_trend' | 'suggestion' | 'motivation';
+        title: string;
+        message: string;
+        data?: {
+            category?: string;
+            amount?: number;
+        };
+    }
+
+    interface IRewindResponse {
+        rewind_title: string;
+        slides: IRewindSlide[];
+    }
+
 }
