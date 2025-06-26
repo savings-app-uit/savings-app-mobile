@@ -154,6 +154,12 @@ export const scanReceiptAPI = (imageFile: FormData) => {
   });
 };
 
+// 23. Get Rewind Data
+export const getRewindAPI = () => {
+  const url = `/api/rewind`;
+  return axios.get<IRewindResponse>(url);
+};
+
 export const createImageFormData = (imageUri: string, fileName?: string) => {
   const formData = new FormData();
   

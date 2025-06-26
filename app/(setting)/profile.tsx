@@ -134,7 +134,6 @@ export default function Profile() {
 
     const handleGalleryOption = async () => {
         try {
-            // Request permission to access media library
             const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
             
             if (!permissionResult.granted) {
@@ -142,11 +141,10 @@ export default function Profile() {
                 return;
             }
 
-            // Launch image picker
             const result = await ImagePicker.launchImageLibraryAsync({
                 mediaTypes: ImagePicker.MediaTypeOptions.Images,
                 allowsEditing: true,
-                aspect: [1, 1], // Square aspect for avatar
+                aspect: [1, 1], 
                 quality: 0.8,
             });
 
@@ -186,14 +184,11 @@ export default function Profile() {
         try {
             setIsUpdatingAvatar(true);
             
-            // Create FormData with avatar key
             const formData = createAvatarFormData(imageUri, 'avatar.jpg');
             
-            // Call updateAvatarAPI
             const response = await updateAvatarAPI(formData);
             
             if (response && response.user) {
-                // Update user state with new avatar URL
                 const updatedUser = {
                     ...user!,
                     imageUrl: response.user.imageUrl
