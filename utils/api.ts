@@ -113,13 +113,13 @@ export const getIconsAPI = () => {
 // 17. Get Profile
 export const getProfileAPI = () => {
   const url = `/api/profile`;
-  return axios.get<IProfileResponse>(url);
+  return axios.get<IProfileAPIResponse>(url);
 };
 
 // 18. Update Profile
 export const updateProfileAPI = (data: IUpdateProfileRequest) => {
-  const url = `/api/profile`;
-  return axios.put<IProfileResponse>(url, data);
+  const url = `/api/profile/update`;
+  return axios.post<IProfileResponse>(url, data);
 };
 
 // 19. Delete Profile
@@ -134,7 +134,17 @@ export const changePasswordAPI = (data: IChangePasswordRequest) => {
   return axios.post<{ message: string }>(url, data);
 };
 
-// 21. Scan Receipt/Invoice
+// 21. Update Avatar
+export const updateAvatarAPI = (avatar: FormData) => {
+  const url = `/api/profile/update`;
+  return axios.post<IUpdateAvatarResponse>(url, avatar, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
+};
+
+// 22. Scan Receipt/Invoice
 export const scanReceiptAPI = (imageFile: FormData) => {
   const url = `/api/scan`;
   return axios.post<IScanReceiptResponse>(url, imageFile, {
@@ -151,6 +161,18 @@ export const createImageFormData = (imageUri: string, fileName?: string) => {
     uri: imageUri,
     type: 'image/jpeg', 
     name: fileName || 'receipt.jpg',
+  } as any);
+  
+  return formData;
+};
+
+export const createAvatarFormData = (imageUri: string, fileName?: string) => {
+  const formData = new FormData();
+  
+  formData.append('avatar', {
+    uri: imageUri,
+    type: 'image/jpeg', 
+    name: fileName || 'avatar.jpg',
   } as any);
   
   return formData;
@@ -184,6 +206,44 @@ export const parseVietnameseDate = (dateString: string): Date | null => {
   } catch (error) {
     return null;
   }
+};
+
+// Helper function to extract profile data from API response
+export const extractProfileData = (response: any): IProfile | null => {
+  if (!response || typeof response !== 'object') {
+    return null;
+  }
+
+  // Check if response has data property (IProfileResponse structure)
+  if (response.data && typeof response.data === 'object' && response.data.id) {
+    return response.data as IProfile;
+  }
+  
+  // Check if response is directly the profile object (has id property)
+  if (response.id && response.name && response.email) {
+    return response as IProfile;
+  }
+  
+  return null;
+};
+
+// Helper function to check if API response indicates success
+export const isSuccessResponse = (response: any): boolean => {
+  if (!response || typeof response !== 'object') {
+    return false;
+  }
+  
+  // Check for success message
+  if (response.message && typeof response.message === 'string') {
+    return true;
+  }
+  
+  // Check if response is a profile object (direct success)
+  if (response.id && response.name && response.email) {
+    return true;
+  }
+  
+  return false;
 };
 
 // Get all transactions (both income and expense)
