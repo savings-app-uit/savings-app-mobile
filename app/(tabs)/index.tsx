@@ -1,10 +1,11 @@
 import { useTransactionContext } from '@/contexts/TransactionContext';
+import { getProfileAPI } from '@/utils/api';
 import { Ionicons } from "@expo/vector-icons";
 import MaskedView from "@react-native-masked-view/masked-view";
 import { LinearGradient } from "expo-linear-gradient";
-import React, { useState } from "react";
+import { router } from 'expo-router';
+import React, { useEffect, useState } from "react";
 import {
-  Dimensions,
   ScrollView,
   StyleSheet,
   Text,
@@ -13,12 +14,7 @@ import {
 } from "react-native";
 import MonthlyBarChart from "../component/BarChart";
 import MonthlySummary from "../component/PieChart";
-import { router } from 'expo-router';
 
-const screenWidth = Dimensions.get("window").width;
-const User = {
-  name: "Sanni",
-};
 
 export default function OverviewScreen() {
   const { reloadTrigger } = useTransactionContext();
@@ -29,8 +25,48 @@ export default function OverviewScreen() {
   const [viewMode, setViewMode] = useState<"pie" | "bar">("pie");
   const [activeTab, setActiveTab] = useState<"expense" | "income">("expense");
   const [loading, setLoading] = useState(false);
+  const [userProfile, setUserProfile] = useState<any>(null);
+  const [profileLoading, setProfileLoading] = useState(true);
+
+  useEffect(() => {
+  }, [userProfile, profileLoading]);
 
   const filteredChart = chartWithPercent.filter(item => item.name !== "Còn lại");
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        setProfileLoading(true);
+        
+        const response = await getProfileAPI();
+        
+        let profileData = null;
+        const resp = response as any;
+        
+        if (resp?.data?.name) {
+          profileData = resp.data;
+        }
+        else if (resp?.name) {
+          profileData = resp;
+        }
+        else if (resp?.data?.data?.name) {
+          profileData = resp.data.data;
+        }
+        
+        if (profileData?.name) {
+          setUserProfile(profileData);
+        } else {
+          setUserProfile({ name: "Sanni" });
+        }
+      } catch (error: any) {
+        setUserProfile({ name: "Sanni" });
+      } finally {
+        setProfileLoading(false);
+      }
+    };
+
+    fetchProfile();
+  }, []);
 
   const handleDataChange = ({ currentMonth, chartWithPercent, otherItemsDetail }: any) => {
     console.log('Index.tsx - Data changed:', { currentMonth, chartWithPercent, otherItemsDetail });
@@ -56,19 +92,29 @@ export default function OverviewScreen() {
               alignItems: "center",
             }}
           >
-            <Text style={styles.headerText}>Xin chào</Text>
-            <MaskedView
-              maskElement={<Text style={styles.gradientText}>{User.name}</Text>}
-            >
-              <LinearGradient
-                colors={["#DD5E89", "#EB8E90", "#F7BB97"]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
+            <Text style={styles.headerText}>Xin chào,</Text>
+            {profileLoading ? (
+              <View style={styles.loadingSkeleton}>
+                <LinearGradient
+                  colors={["#E0E0E0", "#F0F0F0", "#E0E0E0"]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={styles.skeletonGradient}
+                />
+              </View>
+            ) : (
+              <MaskedView
+                maskElement={<Text style={styles.gradientText}>{userProfile?.name || 'Sanni'}</Text>}
               >
-                <Text style={[styles.gradientText, { opacity: 0 }]}> {User.name} </Text>
-              </LinearGradient>
-            </MaskedView>
-            <Text style={styles.headerText}>!</Text>
+                <LinearGradient
+                  colors={["#DD5E89", "#EB8E90", "#F7BB97"]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                >
+                  <Text style={[styles.gradientText, { opacity: 0 }]}> {userProfile?.name || 'Sanni'} </Text>
+                </LinearGradient>
+              </MaskedView>
+            )}
           </View>
           <TouchableOpacity onPress={handleGoToProfile}>
           <MaskedView
@@ -237,5 +283,16 @@ const styles = StyleSheet.create({
     padding: 16,
     marginHorizontal: 16,
     gap: 8,
-  }
+  },
+  loadingSkeleton: {
+    height: 26,
+    width: 80,
+    borderRadius: 4,
+    overflow: 'hidden',
+    backgroundColor: '#E0E0E0',
+  },
+  skeletonGradient: {
+    flex: 1,
+    height: '100%',
+  },
 });
