@@ -1,9 +1,9 @@
+import { useTabBarVisibility } from '@/contexts/TabBarVisibilityContext';
 import { Ionicons } from "@expo/vector-icons";
 import { BottomTabBarProps } from "@react-navigation/bottom-tabs";
 import { usePathname, useRouter } from "expo-router";
 import React from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { useTabBarVisibility } from '@/contexts/TabBarVisibilityContext';
 
 export default function CustomTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
   const router = useRouter();
@@ -28,14 +28,14 @@ export default function CustomTabBar({ state, descriptors, navigation }: BottomT
 
         if (route.name === "index") {
           iconName = "home-outline";
-          label = "Home";
+          label = "Trang chủ";
         } else if (route.name === "add") {
           iconName = "add";
           label = "Add";
           isCenter = true;
         } else if (route.name === "history") {
           iconName = "time-outline";
-          label = "History";
+          label = "Lịch sử";
         }
 
         const onPress = () => {
