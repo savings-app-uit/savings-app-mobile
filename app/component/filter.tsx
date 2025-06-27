@@ -1,18 +1,18 @@
+import { useTransactionContext } from '@/contexts/TransactionContext';
+import { deleteCategoryAPI } from '@/utils/api';
 import { Ionicons } from "@expo/vector-icons";
 import React, { useState } from "react";
 import {
-    Dimensions,
-    Modal,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  Alert,
+  Dimensions,
+  Modal,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import ConfirmDeleteModal from "./ConfirmDelete";
-import { deleteCategoryAPI } from '@/utils/api';
-import { Alert } from 'react-native';
-import { useTransactionContext } from '@/contexts/TransactionContext';
 
 const screenHeight = Dimensions.get("window").height;
 
@@ -56,19 +56,46 @@ export default function Filter({
     try {
       setShowCategoryDeleteModal(false);
 
+      let successCount = 0;
+      let failedCount = 0;
+      let unauthorizedCount = 0;
+      
       for (const name of selectedCategories) {
         const cat = categories.find((c) => c.name === name);
         if (cat) {
-          await deleteCategoryAPI(cat.id); 
+          try {
+            const response = await deleteCategoryAPI(cat.id); 
+            if (response?.message === "Category deleted successfully") {
+              successCount++;
+            } else {
+              failedCount++;
+            }
+          } catch (singleError: any) {
+            if (singleError.response?.data?.message === "Unauthorized to delete this category") {
+              unauthorizedCount++;
+            } else {
+              failedCount++;
+            }
+          }
         }
       }
 
       triggerReload();
-      Alert.alert('Thành công', 'Đã xoá danh mục đã chọn');
-      setSelectedCategories([]); // clear sau khi xoá
-    } catch (error) {
+      
+      if (successCount === selectedCategories.length) {
+        Alert.alert('Thành công', 'Đã xóa danh mục được chọn');
+      } else if (successCount > 0) {
+        Alert.alert('Cảnh báo', `Đã xóa ${successCount}/${selectedCategories.length} danh mục. ${unauthorizedCount > 0 ? 'Một số danh mục mặc định không thể xóa.' : 'Một số danh mục không thể xóa.'}`);
+      } else if (unauthorizedCount > 0) {
+        Alert.alert('Lỗi', 'Bạn không được xóa danh mục mặc định');
+      } else {
+        Alert.alert('Lỗi', 'Không thể xóa danh mục đã chọn');
+      }
+      
+      setSelectedCategories([]); 
+    } catch (error: any) {
       console.error('Delete category error:', error);
-      Alert.alert('Lỗi', 'Không thể xoá danh mục');
+      Alert.alert('Lỗi', 'Có lỗi xảy ra khi xóa danh mục');
     }
   };
 

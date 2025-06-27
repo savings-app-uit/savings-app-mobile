@@ -98,7 +98,9 @@ declare global {
     interface ITransactionsResponse {
         message: string;
         data?: ITransaction[];
-    }    interface ICategory {
+    }    
+    
+    interface ICategory {
         id: string;
         name: string;
         icon: {

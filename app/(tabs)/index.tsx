@@ -1,5 +1,5 @@
 import { useTransactionContext } from '@/contexts/TransactionContext';
-import { getProfileAPI } from '@/utils/api';
+import { getProfileAPI, getRewindAPI } from '@/utils/api';
 import { Ionicons } from "@expo/vector-icons";
 import MaskedView from "@react-native-masked-view/masked-view";
 import { LinearGradient } from "expo-linear-gradient";
@@ -28,11 +28,60 @@ export default function OverviewScreen() {
   const [loading, setLoading] = useState(false);
   const [userProfile, setUserProfile] = useState<any>(null);
   const [profileLoading, setProfileLoading] = useState(true);
-
-  useEffect(() => {
-  }, [userProfile, profileLoading]);
+  const [showRewindCard, setShowRewindCard] = useState(false);
+  const [rewindLoading, setRewindLoading] = useState(true);
 
   const filteredChart = chartWithPercent.filter(item => item.name !== "Còn lại");
+
+  useEffect(() => {
+    const checkRewindData = async () => {
+      try {
+        setRewindLoading(true);
+        const rewindResponse = await getRewindAPI();
+        
+        let hasValidData = false;
+        
+        const data = rewindResponse as any;
+        
+        if (data) {
+          hasValidData = (
+            data.rewind_title && 
+            data.rewind_title.trim() !== '' &&
+            data.slides && 
+            Array.isArray(data.slides) && 
+            data.slides.length > 0
+          );
+          
+          if (hasValidData) {
+            const validSlides = data.slides.filter((slide: any) => 
+              slide.title && slide.title.trim() !== '' && 
+              slide.message && slide.message.trim() !== ''
+            );
+            hasValidData = validSlides.length > 0;
+          }
+        }
+        
+        console.log('=== REWIND API DEBUG ===');
+        console.log('Full response:', JSON.stringify(data, null, 2));
+        console.log('Response type:', typeof data);
+        console.log('=== END DEBUG ===');
+        
+        console.log('Rewind data check:', { 
+          hasValidData, 
+          title: data?.rewind_title,
+          slidesCount: data?.slides?.length 
+        });
+        setShowRewindCard(hasValidData);
+      } catch (error) {
+        console.log('Error checking rewind data:', error);
+        setShowRewindCard(false);
+      } finally {
+        setRewindLoading(false);
+      }
+    };
+
+    checkRewindData();
+  }, [reloadTrigger]); 
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -138,8 +187,19 @@ export default function OverviewScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Zentra Wrapped Card */}
-        <RewindCard onPress={() => router.push('/rewind/' as any)} />
+        {/* Zentra Wrapped Card - chỉ hiển thị khi có dữ liệu hợp lệ */}
+        {rewindLoading ? (
+          <View style={styles.rewindCardSkeleton}>
+            <LinearGradient
+              colors={["#E0E0E0", "#F0F0F0", "#E0E0E0"]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={styles.skeletonGradient}
+            />
+          </View>
+        ) : showRewindCard ? (
+          <RewindCard onPress={() => router.push('/rewind/' as any)} />
+        ) : null}
 
         <View style={{display: 'flex', flexDirection: 'row', justifyContent: 'space-between', alignItems:'center'}}>
           <Text style={styles.sectionTitle}>Tổng quan</Text>
@@ -299,5 +359,13 @@ const styles = StyleSheet.create({
   skeletonGradient: {
     flex: 1,
     height: '100%',
+  },
+  rewindCardSkeleton: {
+    height: 120,
+    marginHorizontal: 16,
+    marginVertical: 8,
+    borderRadius: 16,
+    overflow: 'hidden',
+    backgroundColor: '#E0E0E0',
   },
 });
