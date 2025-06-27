@@ -25,6 +25,9 @@ export default function Profile() {
     const [user, setUser] = useState<IProfile | null>(null);
     const [avatar, setAvatar] = useState('');
     const [showCameraModal, setShowCameraModal] = useState(false);
+    const [showPreviewModal, setShowPreviewModal] = useState(false);
+    const [capturedPhoto, setCapturedPhoto] = useState<string | null>(null);
+    const [cameraFacing, setCameraFacing] = useState<'front' | 'back'>('front');
     const [cameraPermission, requestCameraPermission] = useCameraPermissions();
     const [isUpdatingAvatar, setIsUpdatingAvatar] = useState(false);
     const isInitialLoad = useRef(true);
@@ -171,13 +174,32 @@ export default function Profile() {
             });
 
             if (photo) {
+                setCapturedPhoto(photo.uri);
                 setShowCameraModal(false);
-                await handleUpdateAvatar(photo.uri);
+                setShowPreviewModal(true);
             }
         } catch (error) {
             console.error('Error taking picture:', error);
             Alert.alert('Lỗi', 'Không thể chụp ảnh');
         }
+    };
+
+    const handleConfirmPhoto = async () => {
+        if (capturedPhoto) {
+            setShowPreviewModal(false);
+            await handleUpdateAvatar(capturedPhoto);
+            setCapturedPhoto(null);
+        }
+    };
+
+    const handleRetakePhoto = () => {
+        setShowPreviewModal(false);
+        setCapturedPhoto(null);
+        setShowCameraModal(true);
+    };
+
+    const handleFlipCamera = () => {
+        setCameraFacing(current => current === 'front' ? 'back' : 'front');
     };
 
     const handleUpdateAvatar = async (imageUri: string) => {
@@ -424,7 +446,7 @@ export default function Profile() {
                   <CameraView
                     ref={cameraRef}
                     style={styles.camera}
-                    facing="front"
+                    facing={cameraFacing}
                   />
                   
                   <View style={styles.cameraControls}>
@@ -442,7 +464,59 @@ export default function Profile() {
                       <Ionicons name="camera" size={32} color="#fff" />
                     </TouchableOpacity>
                     
-                    <View style={styles.cameraButton} />
+                    <TouchableOpacity 
+                      style={styles.cameraButton}
+                      onPress={handleFlipCamera}
+                    >
+                      <Ionicons name="camera-reverse" size={30} color="#fff" />
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              </Modal>
+
+              {/* Photo Preview Modal */}
+              <Modal
+                visible={showPreviewModal}
+                transparent={false}
+                animationType="slide"
+                onRequestClose={() => setShowPreviewModal(false)}
+              >
+                <View style={styles.previewContainer}>
+                  {capturedPhoto && (
+                    <>
+                      <Image
+                        source={{ uri: capturedPhoto }}
+                        style={styles.previewImage}
+                        resizeMode="cover"
+                      />
+                    </>
+                  )}
+                  
+                  <View style={styles.previewOverlay}>
+                    <View style={styles.previewControls}>
+                      <TouchableOpacity 
+                        style={[styles.previewButton, styles.retakeButton]}
+                        onPress={handleRetakePhoto}
+                      >
+                        <Ionicons name="camera" size={20} color="#fff" />
+                        <Text style={styles.previewButtonText}>Chụp lại</Text>
+                      </TouchableOpacity>
+                      
+                      <TouchableOpacity 
+                        style={[styles.previewButton, styles.confirmButton]}
+                        onPress={handleConfirmPhoto}
+                        disabled={isUpdatingAvatar}
+                      >
+                        {isUpdatingAvatar ? (
+                          <ActivityIndicator size="small" color="#fff" />
+                        ) : (
+                          <Ionicons name="checkmark" size={20} color="#fff" />
+                        )}
+                        <Text style={styles.previewButtonText}>
+                          {isUpdatingAvatar ? 'Đang cập nhật...' : 'Xác nhận'}
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
                   </View>
                 </View>
               </Modal>
@@ -680,5 +754,140 @@ const styles = StyleSheet.create({
         shadowRadius: 3.84,
         borderWidth: 4,
         borderColor: '#fff',
+    },
+    // Preview styles
+    previewContainer: {
+        flex: 1,
+        backgroundColor: '#000',
+        position: 'relative',
+    },
+    previewImage: {
+        flex: 1,
+        width: '100%',
+    },
+    previewOverlay: {
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        backgroundColor: 'rgba(0, 0, 0, 0.7)',
+        padding: 30,
+        paddingBottom: 50,
+    },
+    previewTitle: {
+        color: '#fff',
+        fontSize: 18,
+        fontWeight: 'bold',
+        textAlign: 'center',
+        marginBottom: 30,
+        fontFamily: 'Inter',
+    },
+    previewControls: {
+        flexDirection: 'row',
+        justifyContent: 'space-around',
+        alignItems: 'center',
+    },
+    previewButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: 12,
+        paddingHorizontal: 24,
+        borderRadius: 25,
+        minWidth: 120,
+        elevation: 3,
+        shadowColor: '#000',
+        shadowOffset: {
+            width: 0,
+            height: 2,
+        },
+        shadowOpacity: 0.25,
+        shadowRadius: 3.84,
+    },
+    retakeButton: {
+        backgroundColor: '#666',
+    },
+    confirmButton: {
+        backgroundColor: '#DD5E89',
+    },
+    previewButtonText: {
+        color: '#fff',
+        fontWeight: 'bold',
+        marginLeft: 8,
+        fontSize: 16,
+        fontFamily: 'Inter',
+    },
+    // Camera UI improvements
+    cameraIndicator: {
+        position: 'absolute',
+        top: 60,
+        left: 20,
+        backgroundColor: 'rgba(0, 0, 0, 0.6)',
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: 15,
+    },
+    cameraIndicatorText: {
+        color: '#fff',
+        fontSize: 14,
+        fontWeight: '500',
+        fontFamily: 'Inter',
+    },
+    captureInstruction: {
+        position: 'absolute',
+        bottom: 150,
+        left: 20,
+        right: 20,
+        alignItems: 'center',
+    },
+    captureInstructionText: {
+        color: '#fff',
+        fontSize: 16,
+        textAlign: 'center',
+        backgroundColor: 'rgba(0, 0, 0, 0.6)',
+        paddingHorizontal: 20,
+        paddingVertical: 10,
+        borderRadius: 20,
+        fontFamily: 'Inter',
+    },
+    // Avatar preview overlay
+    avatarPreviewOverlay: {
+        position: 'absolute',
+        top: 100,
+        left: 0,
+        right: 0,
+        alignItems: 'center',
+        zIndex: 1,
+    },
+    avatarPreviewCircle: {
+        width: 120,
+        height: 120,
+        borderRadius: 60,
+        borderWidth: 4,
+        borderColor: '#fff',
+        overflow: 'hidden',
+        shadowColor: '#000',
+        shadowOffset: {
+            width: 0,
+            height: 4,
+        },
+        shadowOpacity: 0.3,
+        shadowRadius: 6,
+        elevation: 8,
+    },
+    avatarPreviewImage: {
+        width: '100%',
+        height: '100%',
+    },
+    avatarPreviewText: {
+        color: '#fff',
+        fontSize: 16,
+        fontWeight: 'bold',
+        marginTop: 15,
+        backgroundColor: 'rgba(0, 0, 0, 0.6)',
+        paddingHorizontal: 15,
+        paddingVertical: 8,
+        borderRadius: 15,
+        fontFamily: 'Inter',
     },
 });
