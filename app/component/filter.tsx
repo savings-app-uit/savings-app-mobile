@@ -82,18 +82,13 @@ export default function Filter({
 
       triggerReload();
       
-      // Hiển thị thông báo dựa trên kết quả
       if (successCount === selectedCategories.length) {
-        // Tất cả đều xóa thành công
         Alert.alert('Thành công', 'Đã xóa danh mục được chọn');
       } else if (successCount > 0) {
-        // Một số xóa thành công, một số thất bại
         Alert.alert('Cảnh báo', `Đã xóa ${successCount}/${selectedCategories.length} danh mục. ${unauthorizedCount > 0 ? 'Một số danh mục mặc định không thể xóa.' : 'Một số danh mục không thể xóa.'}`);
       } else if (unauthorizedCount > 0) {
-        // Tất cả đều là danh mục mặc định
         Alert.alert('Lỗi', 'Bạn không được xóa danh mục mặc định');
       } else {
-        // Tất cả đều thất bại vì lý do khác
         Alert.alert('Lỗi', 'Không thể xóa danh mục đã chọn');
       }
       
