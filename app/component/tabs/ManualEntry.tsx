@@ -10,17 +10,39 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  View
+  View,
+  Modal
 } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import AddCategoryModal from '../AddCategoryModal';
 import CategoryPicker from '../CategoryPicker';
+import { Calendar, LocaleConfig   } from 'react-native-calendars';
+import moment from 'moment';
 
 interface ManualEntryProps {
   scanResult?: IScanReceiptResponse | null;
 }
 
+LocaleConfig.locales['vi'] = {
+  monthNames: [
+    'Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4', 'Tháng 5', 'Tháng 6',
+    'Tháng 7', 'Tháng 8', 'Tháng 9', 'Tháng 10', 'Tháng 11', 'Tháng 12'
+  ],
+  monthNamesShort: [
+    'Thg1', 'Thg2', 'Thg3', 'Thg4', 'Thg5', 'Thg6',
+    'Thg7', 'Thg8', 'Thg9', 'Thg10', 'Thg11', 'Thg12'
+  ],
+  dayNames: ['Chủ nhật', 'Thứ hai', 'Thứ ba', 'Thứ tư', 'Thứ năm', 'Thứ sáu', 'Thứ bảy'],
+  dayNamesShort: ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'],
+  today: 'Hôm nay'
+};
+LocaleConfig.defaultLocale = 'vi';
+
+
+
 export default function ManualTransactionForm({ scanResult }: ManualEntryProps) {
+
+  const today = moment().format(); 
   const { triggerReload } = useTransactionContext();
   const [activeTab, setActiveTab] = useState<'expense' | 'income'>('expense');
   const [amount, setAmount] = useState('');
@@ -29,6 +51,8 @@ export default function ManualTransactionForm({ scanResult }: ManualEntryProps) 
   const [categoryId, setCategoryId] = useState('');
   const [note, setNote] = useState('');
   const [showDatePicker, setShowDatePicker] = useState(false);
+  const [selectedDate, setSelectedDate] = useState(today);
+  const [showCalendar, setShowCalendar] = useState(false);
   const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [showAddCategoryModal, setShowAddCategoryModal] = useState(false);
   const [exCategoryList, setExCategoryList] = useState<any[]>([]);
@@ -107,6 +131,11 @@ export default function ManualTransactionForm({ scanResult }: ManualEntryProps) 
   };
   const formatDate = (d: Date) => {
     return `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth() + 1).toString().padStart(2, '0')}/${d.getFullYear()}`;
+  };
+
+  const handleDateSelect = (day: { dateString: string }) => {
+    setSelectedDate(day.dateString);
+    setShowCalendar(false);
   };
 
   const handleAddTransaction = async () => {
@@ -255,11 +284,11 @@ export default function ManualTransactionForm({ scanResult }: ManualEntryProps) 
 
             {/* Ngày */}
             <Text style={styles.label}>Ngày giao dịch</Text>
-            <TouchableOpacity style={styles.input} onPress={() => setShowDatePicker(true)}>
-              <Text>{formatDate(date)}</Text>
+            <TouchableOpacity style={styles.input} onPress={() => setShowCalendar(true)}>
+              <Text>{moment(selectedDate).format('DD-MM-YYYY')}</Text>
             </TouchableOpacity>
 
-            {showDatePicker && (
+            {/* {showDatePicker && (
               <DateTimePicker
                 value={date}
                 mode="date"
@@ -269,7 +298,26 @@ export default function ManualTransactionForm({ scanResult }: ManualEntryProps) 
                   if (selected) setDate(selected);
                 }}
               />
-            )}
+            )} */}
+
+            <Modal visible={showCalendar} transparent animationType="slide">
+              <View style={styles.modalOverlay}>
+                <View style={styles.modalContent}>
+                  <Calendar
+                    onDayPress={handleDateSelect}
+                    markedDates={{
+                      [selectedDate]: {
+                        selected: true,
+                        selectedColor: '#DD5E89',
+                      },
+                    }}
+                  />
+                  <TouchableOpacity onPress={() => setShowCalendar(false)} style={styles.closeButton}>
+                    <Text style={{ color: '#fff' }}>Đóng</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </Modal>
 
             {/* Ghi chú */}
             <Text style={styles.label}>Ghi chú</Text>
@@ -410,5 +458,23 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontSize: 14,
     fontWeight: '500',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.3)',
+    justifyContent: 'center',
+    padding: 24,
+  },
+  modalContent: {
+    backgroundColor: 'white',
+    borderRadius: 16,
+    padding: 16,
+  },
+  closeButton: {
+    marginTop: 12,
+    backgroundColor: '#DD5E89',
+    borderRadius: 8,
+    padding: 10,
+    alignItems: 'center',
   },
 });

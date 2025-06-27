@@ -25,12 +25,12 @@ export default function ForgotPassword() {
 
     const handleSendCode = async () => {
         if (!email.trim()) {
-            Alert.alert('Error', 'Please enter your email');
+            Alert.alert('Lỗi', 'Vui lòng nhập email của bạn.');
             return;
         }
 
         if (!email.includes('@')) {
-            Alert.alert('Error', 'Please enter a valid email address');
+            Alert.alert('Lỗi', 'Vui lòng nhập email hợp lệ.');
             return;
         }
 
@@ -50,11 +50,11 @@ export default function ForgotPassword() {
                 });
                 
                 Alert.alert(
-                    'Success', 
-                    response.message || 'Verification code sent to your email'
+                    'Thành công', 
+                    response.message || 'Mã xác nhận đã được gửi đến email của bạn.'
                 );
             } else {
-                Alert.alert('Error', response.message || 'Failed to send code');
+                Alert.alert('Lỗi', response.message || 'Gửi mã xác nhận thất bại.');
             }
         } catch (error: any) {
             console.error('Send code error:', error);
@@ -68,7 +68,7 @@ export default function ForgotPassword() {
                 errorMessage = error.message || 'Request setup error';
             }
             
-            Alert.alert('Error', errorMessage);
+            Alert.alert('Lỗi', errorMessage);
         } finally {
             setLoading(false);
         }
@@ -92,7 +92,7 @@ export default function ForgotPassword() {
                             color="#999"/>
                     </TouchableOpacity>
 
-                    <View style={{ flex: 1, alignItems: 'center', position: 'relative' }}>
+                    <View style={{ flex: 1, alignItems: 'center', position: 'relative'}}>
                         <MaskedView 
                             maskElement={
                                 <Text style={styles.gradientText}>
@@ -139,7 +139,7 @@ export default function ForgotPassword() {
                 <MaskedView 
                     maskElement={
                         <Text style={styles.gradientText}>
-                            Forgot your password?
+                            Quên mật khẩu?
                         </Text>
                     } 
                     style={{ alignSelf: 'center', marginTop: 50 }}>
@@ -148,13 +148,13 @@ export default function ForgotPassword() {
                         start={{ x: 0, y: 0 }} 
                         end={{ x: 1, y: 0 }}>
                         <Text style={[styles.gradientText, { opacity: 0 }]}>
-                            Forgot your password?
+                            Quên mật khẩu?
                         </Text>
                     </LinearGradient>
                 </MaskedView>
 
                 <Text style={[styles.textdecription, {marginTop: 10, alignSelf: 'center',}]}>
-                    Enter your email and we will send you a verification code
+                    Nhập email để nhận mã xác thực
                 </Text>
 
                 <Text style={[styles.textdecription, {marginTop: 50, marginLeft: 40}]}>
@@ -163,7 +163,7 @@ export default function ForgotPassword() {
 
                 <TextInput 
                     style={[styles.input, {alignSelf: 'center', marginTop: 5}]}
-                    placeholder='Enter your email'
+                    placeholder='Nhập email'
                     placeholderTextColor='#999'
                     keyboardType='email-address'
                     autoCapitalize='none'
@@ -178,7 +178,7 @@ export default function ForgotPassword() {
                         style={[styles.linearGradient, {marginTop: 60, alignSelf: 'center', width: '80%', height: 50}]}>
 
                         <Text style={styles.buttonText}>
-                            {loading ? 'Sending...' : 'Send code'}
+                            {loading ? 'Đang gửi...' : 'Gửi mã'}
                         </Text>
                     </LinearGradient>
                 </TouchableOpacity>
@@ -253,7 +253,7 @@ const styles = StyleSheet.create({
     },
     gradientText: {
         fontFamily: 'Inter',
-        fontSize: 26,
+        fontSize: 32,
         fontWeight: 'bold',
     }
 });

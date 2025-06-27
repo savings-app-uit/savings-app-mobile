@@ -39,7 +39,7 @@ export default function SignIn() {
 
     const handleLogin = async () => {
         if (!email || !password) {
-            Alert.alert('Error', 'Please enter both email and password.');            
+            Alert.alert('Lỗi đăng nhập', 'Vui lòng nhập đầy đủ email và mật khẩu.');            
             return;
         }
         
@@ -59,7 +59,7 @@ export default function SignIn() {
                 
                 // Alert.alert('Success', response.message || 'Login successful');
             } else {
-                Alert.alert('Login Failed', response.message || 'Invalid credentials. Please try again.');
+                Alert.alert('Lỗi đăng nhập', response.message || 'Thông tin đăng nhập không hợp lệ. Vui lòng thử lại.');
             }
         } catch (error: any) {
             console.error('Login error:', error);
@@ -77,7 +77,7 @@ export default function SignIn() {
                 errorMessage = error.message || 'Request setup error';
             }
             
-            Alert.alert('Login Error', errorMessage);
+            Alert.alert('Lỗi đăng nhập', errorMessage);
         } finally {
             setLoading(false);
         }
@@ -121,7 +121,7 @@ export default function SignIn() {
                     <MaskedView 
                         maskElement={
                             <Text style={styles.gradientText}>
-                                Start your Zentra!
+                                Sẵn sàng cùng Zentra?
                             </Text>
                         } 
                         style={{ alignSelf: 'center', marginTop: 100 }}>
@@ -131,13 +131,13 @@ export default function SignIn() {
                             end={{ x: 1, y: 0 }}>
 
                             <Text style={[styles.gradientText, { opacity: 0 }]}>
-                                Start your Zentra!
+                                Sẵn sàng cùng Zentra?
                             </Text>
                         </LinearGradient>
                     </MaskedView>
 
                     <Text style={[styles.textdecription, {marginTop: 10, alignSelf: 'center',}]}>
-                        Create an account or log in to explore our app
+                        Tạo tài khoản hoặc đăng nhập để bắt đầu
                     </Text>
 
                     <Text style={[styles.textdecription, {marginTop: 70, marginLeft: 40}]}>
@@ -146,7 +146,7 @@ export default function SignIn() {
 
                     <TextInput 
                         style={[styles.input, {alignSelf: 'center', marginTop: 5}]}
-                        placeholder='Enter your email'
+                        placeholder='Nhập email'
                         placeholderTextColor='#999'
                         keyboardType='email-address'
                         autoCapitalize='none'
@@ -155,13 +155,13 @@ export default function SignIn() {
                         onChangeText={setEmail}/>
 
                     <Text style={[styles.textdecription, {marginTop: 10, marginLeft: 40}]}>
-                        Password
+                        Mật khẩu
                     </Text>
 
                     <View style={[styles.passwordInputContainer, { alignSelf: 'center', marginTop: 5 }]}>
                         <TextInput
                             style={styles.passwordInput} 
-                            placeholder='Enter your password'
+                            placeholder='Nhập mật khẩu'
                             placeholderTextColor='#999'
                             secureTextEntry={!showPassword}
                             autoCapitalize='none'
@@ -180,7 +180,7 @@ export default function SignIn() {
                     </View>                    
                     <TouchableOpacity onPress={handleGoToForgotPassword}>
                         <Text style={[styles.textlink, {marginTop: 10, alignSelf: 'flex-end', marginRight: 40}]}>
-                            Forgot Password?
+                            Quên mật khẩu?
                         </Text>
                     </TouchableOpacity>
 
@@ -192,19 +192,19 @@ export default function SignIn() {
                             style={[styles.linearGradient, {marginTop: 60, alignSelf: 'center', width: '80%', height: 50}]}>
 
                             <Text style={styles.buttonText}>
-                                {loading ? 'Signing In...' : 'Sign In'}
+                                {loading ? 'Đang khởi động...' : 'Đăng nhập'}
                             </Text>
                         </LinearGradient>
                     </TouchableOpacity>
 
                     <View style={{flexDirection: 'row', marginTop: 90, alignContent: 'center', alignItems: 'center', justifyContent: 'center'}}>
                         <Text style={[styles.textdecription, {marginLeft: 0,}]}>
-                            Don't have an account?
+                            Bạn chưa có tài khoản?
                         </Text>
 
                         <TouchableOpacity onPress={handleGoToEnterEmail}>
                             <Text style={[styles.textlink, {marginLeft: 5,}]}>
-                                Sign Up
+                                Đăng ký
                             </Text>
                         </TouchableOpacity>
                     </View>
@@ -308,7 +308,7 @@ const styles = StyleSheet.create({
     },
     gradientText: {
         fontFamily: 'Inter',
-        fontSize: 32,
+        fontSize: 26,
         fontWeight: 'bold',
     }
 });

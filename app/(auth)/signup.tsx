@@ -53,32 +53,32 @@ export default function SignUp() {
 
     const handleSignUp = async () => {
         if (!username.trim()) {
-            Alert.alert('Error', 'Please enter your username');
+            Alert.alert('Lỗi', 'Vui lòng nhập tên người dùng của bạn.');
             return;
         }
         
         if (!emailState.trim()) {
-            Alert.alert('Error', 'Please enter your email');
+            Alert.alert('Lỗi', 'Vui lòng nhập email của bạn.');
             return;
         }
         
         if (!phone.trim()) {
-            Alert.alert('Error', 'Please enter your phone number');
+            Alert.alert('Lỗi', 'Vui lòng nhập số điện thoại của bạn');
             return;
         }
         
         if (!password.trim()) {
-            Alert.alert('Error', 'Please enter your password');
+            Alert.alert('Lỗi', 'Vui lòng nhập mật khẩu của bạn.');
             return;
         }
 
         if (password.length < 6) {
-            Alert.alert('Error', 'Password must be at least 6 characters long');
+            Alert.alert('Lỗi', 'Mật khẩu phải có ít nhất 6 kí tự.');
             return;
         }
 
         if (!code) {
-            Alert.alert('Error', 'Verification code is missing');
+            Alert.alert('Lỗi', 'Không tìm thấy mã xác thực.');
             return;
         }
 
@@ -92,8 +92,8 @@ export default function SignUp() {
                 }
                 
                 Alert.alert(
-                    'Success',
-                    response.message || 'Account created successfully!',
+                    'Thành công',
+                    response.message || 'Tài khoản được tạo thành công!',
                     [
                         {
                             text: 'OK',
@@ -110,7 +110,7 @@ export default function SignUp() {
             }
         } catch (error: any) {
             console.error('Signup error:', error);
-            Alert.alert('Error', error?.message || 'Failed to create account. Please try again.');
+            Alert.alert('Lỗi', error?.message || 'Tạo tài khoản thất bại. Vui lòng thử lại.');
         } finally {
             setLoading(false);
         }
@@ -145,7 +145,7 @@ export default function SignUp() {
                     <MaskedView 
                         maskElement={
                             <Text style={styles.gradientText}>
-                                Sign Up
+                                Đăng ký
                             </Text>
                         } 
                         style={{ alignSelf: 'center', marginTop: 20 }}>
@@ -156,30 +156,30 @@ export default function SignUp() {
                             end={{ x: 1, y: 0 }}>
 
                             <Text style={[styles.gradientText, { opacity: 0 }]}>
-                                Sign Up
+                                Đăng ký
                             </Text>
                         </LinearGradient>
                     </MaskedView>
 
                     <View style={{flexDirection: 'row', marginTop: 10, alignContent: 'center', alignItems: 'center', justifyContent: 'center'}}>
                         <Text style={[styles.textdecription, {marginLeft: 0,}]}>
-                            Already have an account?
+                            Bạn đã có tài khoản?
                         </Text>
 
                         <TouchableOpacity onPress={handleGoToSignIn}>
                             <Text style={[styles.textlink, {marginLeft: 5,}]}>
-                                Sign In
+                                Đăng nhập
                             </Text>
                         </TouchableOpacity>
                     </View>
 
                     <Text style={[styles.textdecription, {marginTop: 30, marginLeft: 40}]}>
-                        Username
+                        Tên người dùng
                     </Text>
 
                     <TextInput 
                         style={[styles.input, {alignSelf: 'center', marginTop: 5}]}
-                        placeholder='Enter your username'
+                        placeholder='Nhập tên người dùng'
                         placeholderTextColor='#999'
                         autoCapitalize='none'
                         autoCorrect={false}
@@ -192,7 +192,7 @@ export default function SignUp() {
 
                     <TextInput 
                         style={[styles.input, {alignSelf: 'center', marginTop: 5}]}
-                        placeholder='Enter your email'
+                        placeholder='Nhập email'
                         placeholderTextColor='#999'
                         keyboardType='email-address'
                         autoCapitalize='none'
@@ -203,12 +203,12 @@ export default function SignUp() {
                     />
 
                     <Text style={[styles.textdecription, {marginTop: 10, marginLeft: 40}]}>
-                        Phone Number 
+                        Số điện thoại 
                     </Text>
 
                     <TextInput 
                         style={[styles.input, {alignSelf: 'center', marginTop: 5}]}
-                        placeholder='Enter your phone number'
+                        placeholder='Nhập số điện thoại'
                         placeholderTextColor='#999'
                         autoCapitalize='none'
                         autoCorrect={false}
@@ -217,13 +217,13 @@ export default function SignUp() {
                         onChangeText={setPhone}/>
 
                     <Text style={[styles.textdecription, {marginTop: 10, marginLeft: 40}]}>
-                        Password
+                        Mật khẩu
                     </Text>
 
                     <View style={[styles.passwordInputContainer, { alignSelf: 'center', marginTop: 5 }]}>
                         <TextInput
                             style={styles.passwordInput} 
-                            placeholder='Enter your password'
+                            placeholder='Nhập mật khẩu'
                             placeholderTextColor='#999'
                             secureTextEntry={!showPassword}
                             autoCapitalize='none'
@@ -248,7 +248,7 @@ export default function SignUp() {
                             colors={loading ? ['#ccc', '#ccc', '#ccc'] : ['#DD5E89', '#EB8E90', '#F7BB97']} 
                             style={[styles.linearGradient, {marginTop: 60, alignSelf: 'center', width: '80%', height: 50}]}>
                             <Text style={styles.buttonText}>
-                                {loading ? 'Creating Account...' : 'Sign Up'}
+                                {loading ? 'Đang tạo tài khoản...' : 'Đăng ký'}
                             </Text>
                         </LinearGradient>
                     </TouchableOpacity>
