@@ -42,7 +42,13 @@ export const signUpVerifyCodeAPI = (email: string, code: string) => {
 // 7. Signup - Finalize
 export const signUpAPI = (username: string, phone: string, email: string, password: string, code: string) => {
   const url = `/api/signup`;
-  return axios.post<ISignupResponse>(url, { username, phone, email, password, code });
+  return axios.post<ISignupResponse>(url, { 
+    name: username,  
+    phone, 
+    email, 
+    password, 
+    code 
+  });
 };
 
 // ===== TRANSACTION MANAGEMENT =====
