@@ -20,11 +20,11 @@ export default function SignIn() {
     let buttonText = '';
 
     if (previousScreen === 'resetpassword') {
-        displayText = 'Password reseted';
-        buttonText = 'Back to Sign In'
+        displayText = 'Đặt lại mật khẩu';
+        buttonText = 'Quay lại đăng nhập'
     } else if (previousScreen === 'signup') {
-        displayText = 'Account created';
-        buttonText = 'Back to Sign In';
+        displayText = 'Tạo tài khoản';
+        buttonText = 'Quay lại đang nhập';
     }
 
     const handleButton = () => {
@@ -86,7 +86,7 @@ export default function SignIn() {
                 <MaskedView 
                     maskElement={
                         <Text style={styles.gradientText}>
-                            successfully!
+                            thành công!
                         </Text>
                     } 
                     style={{ alignSelf: 'center', marginTop: 10 }}>
@@ -95,7 +95,7 @@ export default function SignIn() {
                         start={{ x: 0, y: 0 }} 
                         end={{ x: 1, y: 0 }}>
                         <Text style={[styles.gradientText, { opacity: 0 }]}>
-                            successfully!
+                            thành công!
                         </Text>
                     </LinearGradient>
                 </MaskedView>

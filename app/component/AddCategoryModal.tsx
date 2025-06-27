@@ -108,6 +108,7 @@ export default function AddCategoryModal({ visible, onClose, onSave }: AddCatego
               keyExtractor={(item) => item.id}
               numColumns={4}
               scrollEnabled={true}
+              contentContainerStyle={styles.iconListContainer}
               renderItem={({ item }) => (
                 <TouchableOpacity
                   style={[
@@ -208,4 +209,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+  iconListContainer: {
+  justifyContent: "center",
+  alignItems: "center",
+},
 });

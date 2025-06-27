@@ -13,6 +13,7 @@ import {
     View,
 } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
+import OTPInput from '../component/OTPinput';
 
 
 export default function OTP() {
@@ -32,12 +33,12 @@ export default function OTP() {
 
     const handleVerifyCode = async () => {
         if (!otp.trim()) {
-            Alert.alert('Error', 'Please enter the verification code');
+            Alert.alert('Lỗi', 'Vui lòng nhập mã xác minh.');
             return;
         }
 
         if (!email) {
-            Alert.alert('Error', 'Email is required');
+            Alert.alert('Lỗi', 'Không tìm thấy email.');
             return;
         }
 
@@ -71,14 +72,14 @@ export default function OTP() {
                     return;
                 }
             } else {
-                Alert.alert('Error', 'Invalid verification context');
+                Alert.alert('Lỗi', 'Thông tin xác minh không hợp lệ');
                 return;
             }
             
             console.log('Verify code response:', response);
         } catch (error: any) {
             console.error('Verify code error:', error);
-            Alert.alert('Error', error.message || 'Verification failed');
+            Alert.alert('Lỗi', error.message || 'Xác minh thất bại');
         } finally {
             setLoading(false);
         }
@@ -126,19 +127,58 @@ export default function OTP() {
                     </View>         
                 </View>
 
-                <Text style={[styles.textTitle, {marginTop: 50, marginLeft: 20}]}>
-                    Verification Code
-                </Text> 
+                <MaskedView 
+                    maskElement={
+                        <Ionicons
+                            style={{ marginLeft: 0, marginTop: 50 }}
+                            name={'lock-closed-outline'}
+                            size={200}
+                            color={'black'}/>
+                    } 
+                    style={{ alignSelf: 'center', marginTop: 50 }}>
+                    <LinearGradient 
+                        colors={['#DD5E89', '#EB8E90', '#F7BB97']} 
+                        start={{ x: 0, y: 0 }} 
+                        end={{ x: 1, y: 0 }}>
 
-                <Text style={[styles.textdecription, {marginTop: 10, marginLeft: 20}]}>
-                    We have sent a 4-digit code to
+                        <Ionicons
+                            style={{ marginLeft: 0, marginTop: 50, opacity: 0 }}
+                            name={'lock-closed-outline'}
+                            size={200}
+                            color={'black'}/>
+                    </LinearGradient>
+                </MaskedView>
+
+                <MaskedView 
+                    maskElement={
+                        <Text style={styles.gradientText}>
+                            Nhập mã xác minh
+                        </Text>
+                    } 
+                    style={{ alignSelf: 'center', marginTop: 50 }}>
+                    <LinearGradient 
+                        colors={['#DD5E89', '#EB8E90', '#F7BB97']} 
+                        start={{ x: 0, y: 0 }} 
+                        end={{ x: 1, y: 0 }}>
+                        <Text style={[styles.gradientText, { opacity: 0 }]}>
+                            Nhập mã xác minh
+                        </Text>
+                    </LinearGradient>
+                </MaskedView>
+
+                {/* <Text style={[styles.textTitle, {marginTop: 50, marginLeft: 20}]}>
+                    Verification Code
+                </Text>  */}
+
+                <Text style={[styles.textdecription, {marginTop: 10, alignSelf: 'center'}]}>
+                    Chúng tôi đã gửi mã gồm 4 chữ số đến
                 </Text>
 
-                <Text style={[styles.textEmail, {marginTop: 5, marginLeft: 20}]}>
+                <Text style={[styles.textEmail, {marginTop: 5, alignSelf: 'center'}]}>
                     {email || 'your email'}
                 </Text> 
 
-                <TextInput 
+                {/* <TextInput 
                     style={[styles.input, {alignSelf: 'center', marginTop: 20}]}
                     placeholder='Enter OTP'
                     placeholderTextColor='#999'
@@ -147,16 +187,22 @@ export default function OTP() {
                     keyboardType="number-pad"
                     maxLength={6}
                     value={otp}
-                    onChangeText={setOTP}/> 
+                    onChangeText={setOTP}/>  */}
 
-                <View style={{flexDirection: 'row', marginTop: 10, marginLeft:20}}>
+                <OTPInput
+                    code={otp}
+                    setCode={setOTP}
+                    maxLength={4}
+                />
+
+                <View style={{flexDirection: 'row', marginTop: 10, alignSelf: 'center'}}>
                     <Text style={[styles.textdecription, {marginLeft: 0,}]}>
-                            Didn't receive it?
+                            Bạn chưa nhận được mã?
                     </Text>
 
                     <TouchableOpacity>
                         <Text style={[styles.textlink, {marginLeft: 5,}]}>
-                            Resend
+                            Gửi lại
                         </Text>
                     </TouchableOpacity>
                 </View>
@@ -169,7 +215,7 @@ export default function OTP() {
                         style={[styles.linearGradient, {marginTop: 20, alignSelf: 'center', width: '80%', height: 50}]}>
 
                         <Text style={styles.buttonText}>
-                            {loading ? 'Verifying...' : 'Verify code'}
+                            {loading ? 'Đang xác minh' : 'Xác minh'}
                         </Text>
                     </LinearGradient>
                 </TouchableOpacity>

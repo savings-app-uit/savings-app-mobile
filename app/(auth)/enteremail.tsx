@@ -26,13 +26,13 @@ export default function SignIn() {
 
     const handleSendCode = async () => {
         if (!email.trim()) {
-            Alert.alert('Error', 'Please enter your email address');
+            Alert.alert('Lỗi', 'Vui lòng nhập email của bạn.');
             return;
         }
 
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(email)) {
-            Alert.alert('Error', 'Please enter a valid email address');
+            Alert.alert('Lỗi', 'Vui lòng nhập email hợp lệ.');
             return;
         }
 
@@ -45,7 +45,7 @@ export default function SignIn() {
             }
         } catch (error: any) {
             console.error('Send code error:', error);
-            Alert.alert('Error', error?.message || 'Failed to send verification code. Please try again.');
+            Alert.alert('Lỗi', error?.message || 'Gửi mã xác nhận thất bại. Vui lòng thử lại.');
         } finally {
             setLoading(false);
         }
@@ -116,7 +116,7 @@ export default function SignIn() {
                 <MaskedView 
                     maskElement={
                         <Text style={styles.gradientText}>
-                            Want to join us?
+                            Khởi động hành trình của bạn
                         </Text>
                     } 
                     style={{ alignSelf: 'center', marginTop: 50 }}>
@@ -125,13 +125,13 @@ export default function SignIn() {
                         start={{ x: 0, y: 0 }} 
                         end={{ x: 1, y: 0 }}>
                         <Text style={[styles.gradientText, { opacity: 0 }]}>
-                            Want to join us?
+                            Khởi động hành trình của bạn
                         </Text>
                     </LinearGradient>
                 </MaskedView>
 
                 <Text style={[styles.textdecription, {marginTop: 10, alignSelf: 'center',}]}>
-                    Enter your email and we will send you a verification code
+                    Nhập email để nhận mã xác thực
                 </Text>
 
                 <Text style={[styles.textdecription, {marginTop: 50, marginLeft: 40}]}>
@@ -140,7 +140,7 @@ export default function SignIn() {
 
                 <TextInput 
                     style={[styles.input, {alignSelf: 'center', marginTop: 5}]}
-                    placeholder='Enter your email'
+                    placeholder='Nhập email'
                     placeholderTextColor='#999'
                     keyboardType='email-address'
                     autoCapitalize='none'
@@ -155,7 +155,7 @@ export default function SignIn() {
                         style={[styles.linearGradient, {marginTop: 60, alignSelf: 'center', width: '80%', height: 50}]}>
 
                         <Text style={styles.buttonText}>
-                            {loading ? 'Sending...' : 'Send code'}
+                            {loading ? 'Đang gửi...' : 'Gửi mã'}
                         </Text>
                     </LinearGradient>
                 </TouchableOpacity>
@@ -230,7 +230,7 @@ const styles = StyleSheet.create({
     },
     gradientText: {
         fontFamily: 'Inter',
-        fontSize: 26,
+        fontSize: 24,
         fontWeight: 'bold',
     }
 });

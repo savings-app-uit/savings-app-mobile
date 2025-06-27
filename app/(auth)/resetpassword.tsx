@@ -41,19 +41,19 @@ export default function ResetPassword() {
 
     const validateInputs = () => {
         if (!newPassword.trim()) {
-            Alert.alert('Error', 'Please enter your new password');
+            Alert.alert('Lỗi', 'Vui lòng nhập mật khẩu mới của bạn.');
             return false;
         }
         if (newPassword.length < 6) {
-            Alert.alert('Error', 'Password must be at least 6 characters');
+            Alert.alert('Lỗi', 'PMật khẩu phải có ít nhất 6 kí tự.');
             return false;
         }
         if (!confirmPassword.trim()) {
-            Alert.alert('Error', 'Please confirm your password');
+            Alert.alert('Lỗi', 'Vui lòng xác nhận mật khẩu của bạn.');
             return false;
         }
         if (newPassword !== confirmPassword) {
-            Alert.alert('Error', 'Passwords do not match');
+            Alert.alert('Lỗi', 'Mật khẩu xác nhận không khớp.');
             return false;
         }
         return true;
@@ -65,7 +65,7 @@ export default function ResetPassword() {
         }
 
         if (!email || !code) {
-            Alert.alert('Error', 'Missing verification information. Please start over.');
+            Alert.alert('Lỗi', 'Không tìm thấy thông tin xác thực. Vui lòng bắt đầu lại.');
             return;
         }
 
@@ -128,17 +128,17 @@ export default function ResetPassword() {
                 </View>
 
                 <Text style={[styles.textTitle, {marginTop: 50, alignSelf: 'center'}]}>
-                    Enter Your New Password
+                    Nhập mật khẩu mới của bạn
                 </Text> 
 
                 <Text style={[styles.textdecription, {marginTop: 30, marginLeft: 40}]}>
-                    Password
+                    Mật khẩu
                 </Text>
                 
                 <View style={[styles.passwordInputContainer, { alignSelf: 'center', marginTop: 5 }]}>
                     <TextInput
                         style={styles.passwordInput} 
-                        placeholder='Enter your password'
+                        placeholder='Nhập mật khẩu'
                         placeholderTextColor='#999'
                         secureTextEntry={!showPassword1}
                         autoCapitalize='none'
@@ -157,13 +157,13 @@ export default function ResetPassword() {
                 </View>
 
                 <Text style={[styles.textdecription, {marginTop: 20, marginLeft: 40}]}>
-                    Confirm password
+                    Xác thực mật khẩu
                 </Text>
 
                 <View style={[styles.passwordInputContainer, { alignSelf: 'center', marginTop: 5 }]}>
                     <TextInput
                         style={styles.passwordInput} 
-                        placeholder='Enter your password'
+                        placeholder='Nhập lại mật khẩu'
                         placeholderTextColor='#999'
                         secureTextEntry={!showPassword2}
                         autoCapitalize='none'
@@ -189,7 +189,7 @@ export default function ResetPassword() {
                         style={[styles.linearGradient, {marginTop: 50, alignSelf: 'center', width: '80%', height: 50}]}>
 
                         <Text style={styles.buttonText}>
-                            {loading ? 'Resetting...' : 'Reset password'}
+                            {loading ? 'Đang đặt lại...' : 'Đặt lại mật khẩu'}
                         </Text>
                     </LinearGradient>
                 </TouchableOpacity>
