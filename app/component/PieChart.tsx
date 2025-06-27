@@ -1,7 +1,7 @@
 import { getCategoriesAPI, getExpensesAPI, getIncomesAPI } from "@/utils/api";
 import { Ionicons } from "@expo/vector-icons";
 import React, { useEffect, useState } from "react";
-import { Dimensions, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, Dimensions, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { PieChart } from "react-native-gifted-charts";
 
 const screenWidth = Dimensions.get("window").width;
@@ -42,11 +42,26 @@ export default function MonthlySummary({
   const [otherItemsDetail, setOtherItemsDetail] = useState<any[]>([]);
   const [totalAmount, setTotalAmount] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [isTransitioning, setIsTransitioning] = useState(false);
 
   const getMonthOffset = (offset: number) => {
     const date = new Date(currentMonth + "-01");
     date.setMonth(date.getMonth() + offset);
     return date.toISOString().slice(0, 7);
+  };
+
+  const handleMonthChange = (offset: number) => {
+    setIsTransitioning(true);
+    const newMonth = getMonthOffset(offset);
+    setCurrentMonth(newMonth);
+    setTimeout(() => setIsTransitioning(false), 300);
+  };
+
+  const canGoToNextMonth = () => {
+    const currentDate = new Date();
+    const currentRealMonth = currentDate.toISOString().slice(0, 7); 
+    const nextMonth = getMonthOffset(1);
+    return nextMonth <= currentRealMonth;
   };  useEffect(() => {
     setLoading(true);
     (async () => {
@@ -153,8 +168,15 @@ export default function MonthlySummary({
   return (
     <View style={styles.wrapper}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => setCurrentMonth(getMonthOffset(-1))}>
-          <Ionicons name="chevron-back" size={20} />
+        <TouchableOpacity 
+          onPress={() => handleMonthChange(-1)}
+          disabled={isTransitioning}
+        >
+          <Ionicons 
+            name="chevron-back" 
+            size={20} 
+            color={isTransitioning ? "#ccc" : "#000"} 
+          />
         </TouchableOpacity>
 
         <View style={{ alignItems: "center" }}>
@@ -198,22 +220,32 @@ export default function MonthlySummary({
           </Text>
         </View>
 
-        <TouchableOpacity onPress={() => setCurrentMonth(getMonthOffset(1))}>
-          <Ionicons name="chevron-forward" size={20} />
+        <TouchableOpacity 
+          onPress={() => handleMonthChange(1)}
+          disabled={!canGoToNextMonth() || isTransitioning}
+        >
+          <Ionicons 
+            name="chevron-forward" 
+            size={20} 
+            color={!canGoToNextMonth() || isTransitioning ? "#ccc" : "#000"} 
+          />
         </TouchableOpacity>
       </View>
 
-      {loading ? (
-        <View style={{ alignItems: "center", paddingVertical: 32 }}>
-          <Text style={{ color: "#888" }}>
-            Đang tải dữ liệu...
-          </Text>
-        </View>
-      ) : chartWithPercent.length === 0 ? (
-        <View style={{ alignItems: "center", paddingVertical: 32 }}>
-          <Text style={{ color: "#888" }}>
-            Không có giao dịch trong tháng này
-          </Text>
+      {loading || isTransitioning || chartWithPercent.length === 0 ? (
+        <View style={{ height: 250, justifyContent: 'center', alignItems: 'center' }}>
+          {loading || isTransitioning ? (
+            <View style={{ alignItems: 'center' }}>
+              <ActivityIndicator size="large" color="#EB8E90" />
+              <Text style={{ color: '#666', fontSize: 16, marginTop: 8 }}>
+                Đang tải...
+              </Text>
+            </View>
+          ) : (
+            <Text style={{ color: '#666', fontSize: 16 }}>
+              Không có giao dịch trong tháng này
+            </Text>
+          )}
         </View>
       ) : (
         <View style={styles.chartRow}>

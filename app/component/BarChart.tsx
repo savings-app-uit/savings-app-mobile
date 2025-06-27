@@ -49,8 +49,12 @@ export default function MonthlyBarChart({
   const monthLabels = Array.from({ length: 12 }, (_, i) => {
     const date = new Date();
     date.setMonth(date.getMonth() - (11 - i));
+    const monthNames = [
+      'T1', 'T2', 'T3', 'T4', 'T5', 'T6',
+      'T7', 'T8', 'T9', 'T10', 'T11', 'T12'
+    ];
     return {
-      label: date.toLocaleString("en-US", { month: "short" }),
+      label: monthNames[date.getMonth()],
       key: date.toISOString().slice(0, 7),
     };
   });
@@ -81,7 +85,6 @@ export default function MonthlyBarChart({
 
         // Tạo dữ liệu cho biểu đồ cột 
         const data = visibleMonths.map((month) => {
-          // Lọc giao dịch cho tháng này
           const monthTransactions = transactions.filter((tx: any) => {
             let dateString = '';
             if (tx.date && tx.date._seconds) {
@@ -222,10 +225,7 @@ export default function MonthlyBarChart({
 
         <View style={{ alignItems: "center" }}>
           <Text style={styles.monthText}>
-            {displayMonth.toLocaleDateString("vi-VN", {
-              year: "numeric",
-              month: "long",
-            })}
+            {`Tháng ${displayMonth.getMonth() + 1}/${displayMonth.getFullYear()}`}
           </Text>
 
           <View style={{ flexDirection: "row", marginTop: 8, gap: 16 }}>
