@@ -168,6 +168,8 @@ export default function RewindWrapped() {
                 return ['#fa709a', '#fee140'];
             case 'motivation':
                 return ['#a8edea', '#fed6e3'];
+            case 'fun_fact':
+                return ['#ff9a9e', '#fecfef'];
             default:
                 return ['#667eea', '#764ba2'];
         }
@@ -187,6 +189,8 @@ export default function RewindWrapped() {
                 return 'bulb';
             case 'motivation':
                 return 'rocket';
+            case 'fun_fact':
+                return 'star';
             default:
                 return 'star';
         }
@@ -213,6 +217,8 @@ export default function RewindWrapped() {
                 return 'lightbulb'; 
             case 'motivation':
                 return 'rocket'; 
+            case 'fun_fact':
+                return 'twinkle'; 
             default:
                 return 'fade';
         }
@@ -332,6 +338,34 @@ export default function RewindWrapped() {
                     Animated.timing(morphValue, { toValue: 1, duration: 120, useNativeDriver: true }),
                 ]);
 
+            case 'twinkle':
+                return Animated.sequence([
+                    Animated.parallel([
+                        Animated.timing(slideOpacity, { toValue: 1, duration: 150, useNativeDriver: true }),
+                        Animated.spring(scaleValue, { toValue: 1, tension: 200, friction: 5, useNativeDriver: true }),
+                    ]),
+                    Animated.loop(
+                        Animated.parallel([
+                            Animated.sequence([
+                                Animated.timing(pulseValue, { toValue: 1.2, duration: 200, useNativeDriver: true }),
+                                Animated.timing(pulseValue, { toValue: 1, duration: 200, useNativeDriver: true }),
+                            ]),
+                            Animated.sequence([
+                                Animated.timing(spinValue, { toValue: 1, duration: 800, useNativeDriver: true }),
+                                Animated.timing(spinValue, { toValue: 0, duration: 0, useNativeDriver: true }),
+                            ]),
+                            Animated.sequence([
+                                Animated.timing(bounceValue, { toValue: 1.1, duration: 150, useNativeDriver: true }),
+                                Animated.timing(bounceValue, { toValue: 1, duration: 150, useNativeDriver: true }),
+                                Animated.timing(bounceValue, { toValue: 1.05, duration: 100, useNativeDriver: true }),
+                                Animated.timing(bounceValue, { toValue: 1, duration: 100, useNativeDriver: true }),
+                            ]),
+                        ]),
+                        { iterations: 2 }
+                    ),
+                    Animated.timing(morphValue, { toValue: 1, duration: 180, useNativeDriver: true }),
+                ]);
+
             default:
                 return Animated.parallel([
                     Animated.timing(slideOpacity, { toValue: 1, duration: 200, useNativeDriver: true }),
@@ -343,6 +377,12 @@ export default function RewindWrapped() {
 
     const renderFloatingParticles = () => {
         const particles = [];
+        const currentSlide = rewindData?.slides?.[currentSlideIndex];
+        const slideType = currentSlide?.type || 'intro';
+        
+        // Chỉ cho particles đập với fun_fact và heartbeat
+        const shouldPulse = slideType === 'fun_fact' || slideType === 'top_category';
+        
         for (let i = 0; i < 6; i++) {
             const randomDelay = Math.random() * 2000;
             const randomDuration = 3000 + Math.random() * 2000;
@@ -374,12 +414,13 @@ export default function RewindWrapped() {
                                         outputRange: [`${i * 60}deg`, `${i * 60 + 360}deg`]
                                     })
                                 },
-                                {
+                                // Chỉ thêm scale cho particles khi cần thiết
+                                ...(shouldPulse ? [{
                                     scale: pulseValue.interpolate({
                                         inputRange: [1, 1.3],
-                                        outputRange: [0.5, 1]
+                                        outputRange: [0.6, 1.1]
                                     })
-                                }
+                                }] : [])
                             ]
                         }
                     ]}

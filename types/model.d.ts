@@ -201,7 +201,7 @@ declare global {
 
     // Rewind Response Interfaces
     interface IRewindSlide {
-        type: 'intro' | 'top_category' | 'biggest_transaction' | 'weekend_trend' | 'suggestion' | 'motivation';
+        type: 'intro' | 'top_category' | 'biggest_transaction' | 'weekend_trend' | 'suggestion' | 'motivation' | 'fun_fact';
         title: string;
         message: string;
         data?: {
