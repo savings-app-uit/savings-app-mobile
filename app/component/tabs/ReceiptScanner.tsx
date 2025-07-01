@@ -106,17 +106,24 @@ export default function ReceiptScanner({ onScanResult }: ReceiptScannerProps) {
       const formData = createImageFormData(imageUri, 'receipt.jpg');
       
       const scanResult = await scanReceiptAPI(formData);
+
+      console.log('Scan result:', scanResult);
       
       if (scanResult) {
         // Check if amount is 0 or invalid
         let numericAmount = 0;
-        if (scanResult.amount && typeof scanResult.amount === 'string') {
-          numericAmount = parseFloat(scanResult.amount.replace(/[^\d.]/g, ''));
+        if (scanResult.amount) {
+          // Amount should be a number according to interface, but handle both cases
+          if (typeof scanResult.amount === 'number') {
+            numericAmount = scanResult.amount;
+          } else if (typeof scanResult.amount === 'string') {
+            numericAmount = parseFloat((scanResult.amount as string).replace(/[^\d.]/g, ''));
+          }
         }
 
         // If amount is 0 or invalid, show error alert
         if (isNaN(numericAmount) || numericAmount <= 0) {
-          Alert.alert('Hóa đơn không hợp lệ', 'Không thể xác định hóa đơn này. Vui lòng thử lại.');
+          Alert.alert('Hóa đơn không hợp lệ', 'Không thể xác định số tiền từ hóa đơn này. Vui lòng thử lại.');
           return;
         }
 
