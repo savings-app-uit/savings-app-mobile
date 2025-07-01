@@ -94,10 +94,16 @@ export default function ManualTransactionForm({ scanResult }: ManualEntryProps) 
         setActiveTab(newType);
       }
       
-      if (scanResult.amount && typeof scanResult.amount === 'string') {
-        const scannedAmount = parseFloat(scanResult.amount.replace(/[^\d.]/g, ''));
-        if (!isNaN(scannedAmount) && scannedAmount > 0) {
-          const amountString = scannedAmount.toString();
+      if (scanResult.amount) {
+        let numericAmount = 0;
+        if (typeof scanResult.amount === 'number') {
+          numericAmount = scanResult.amount;
+        } else if (typeof scanResult.amount === 'string') {
+          numericAmount = parseFloat((scanResult.amount as string).replace(/[^\d.]/g, ''));
+        }
+        
+        if (!isNaN(numericAmount) && numericAmount > 0) {
+          const amountString = numericAmount.toString();
           setAmount(amountString);
           setDisplayAmount(formatCurrency(amountString));
         }
