@@ -7,8 +7,10 @@
 
 <p align="center">
   <img src="Screenshots/Picture4.png" width="200" alt="Screenshot 1"/>
+  <img src="Screenshots/Picture10.png" width="200" alt="Screenshot 2"/>
+  <img src="Screenshots/Picture13.png" width="200" alt="Screenshot 2"/>
   <img src="Screenshots/Picture14.png" width="200" alt="Screenshot 2"/>
-  <img src="URL_ANH_CHUP_MAN_HINH_15" width="200" alt="Screenshot 3"/>
+  <img src="Screenshots/Picture15.png" width="200" alt="Screenshot 3"/>
 </p>
 
 ## 🚀 Hướng dẫn cài đặt và khởi chạy
