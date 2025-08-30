@@ -6,9 +6,9 @@
 **Savings App** là một hệ thống ứng dụng di động hoàn chỉnh giúp người dùng quản lý chi tiêu cá nhân một cách thông minh. Ứng dụng sử dụng mô hình AI (OCR & Gemini) để tự động quét, nhận dạng và phân loại thông tin từ hóa đơn, giúp quá trình nhập liệu trở nên nhanh chóng và chính xác.
 
 <p align="center">
-  <img src="URL_ANH_CHUP_MAN_HINH_1" width="200" alt="Screenshot 1"/>
-  <img src="URL_ANH_CHUP_MAN_HINH_2" width="200" alt="Screenshot 2"/>
-  <img src="URL_ANH_CHUP_MAN_HINH_3" width="200" alt="Screenshot 3"/>
+  <img src="Screenshots/Picture4.png" width="200" alt="Screenshot 1"/>
+  <img src="Screenshots/Picture14.png" width="200" alt="Screenshot 2"/>
+  <img src="URL_ANH_CHUP_MAN_HINH_15" width="200" alt="Screenshot 3"/>
 </p>
 
 ## 🚀 Hướng dẫn cài đặt và khởi chạy
@@ -46,7 +46,7 @@ Tạo một file .env ở thư mục gốc savings-app-server và điền các t
 FIREBASE_KEY_PATH=./firebase/serviceAccountKey.json
 
 # JWT Secret for Token Signing
-JWT_SECRET=aJ7g!9Zm#T@4&vSdNw3kXp$0uQeLm!rC
+JWT_SECRET=<your-jwt-secret>
 
 # OTP Expiration (in seconds)
 OTP_EXPIRE_TIME=300
@@ -59,12 +59,12 @@ EMAIL_PASS=nhxwkyvvnibmsvii
 PORT=3001
 
 # Cloudinary
-CLOUDINARY_CLOUD_NAME=dvfukrnu5
-CLOUDINARY_API_KEY=924876963489893
-CLOUDINARY_API_SECRET=w_Oeq8u24WZ7fc5fAeXH3US6of0
+CLOUDINARY_CLOUD_NAME=<your-cloud-name>
+CLOUDINARY_API_KEY=<your-api-key>
+CLOUDINARY_API_SECRET=<your-api-secret>
 
 # API KEY GEMINI
-GEMINI_API_KEY=your_gemini_api_key
+GEMINI_API_KEY=<your_gemini_api_key>
 
 # Model Paths (sẽ được cập nhật ở bước sau)
 PYTHON_PATH=<đường_dẫn_tuyệt_đối_đến_python_trong_venv>
